@@ -1,27 +1,19 @@
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import Home from "./pages/Home";
-import Questoes from "./pages/Questoes";
-import Simulado from "./pages/Simulado";
-import Redacoes from "./pages/Redacoes";
-import "./styles.css";
+import { useEffect, useState } from "react";
+import api from "./services/api";
+import Usuarios from "./pages/Usuarios";
 
 export default function App() {
   return (
     <BrowserRouter>
-      <nav className="nav">
+      <nav style={{ display:"flex", gap:12, padding:12 }}>
         <Link to="/">Home</Link>
-        <Link to="/questoes">Questões</Link>
-        <Link to="/simulado">Simulado</Link>
-        <Link to="/redacoes">Redações</Link>
+        <Link to="/usuarios">Usuários</Link>
+        {/* suas outras páginas */}
       </nav>
-      <div className="container">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/questoes" element={<Questoes />} />
-          <Route path="/simulado" element={<Simulado />} />
-          <Route path="/redacoes" element={<Redacoes />} />
-        </Routes>
-      </div>
+      <Routes>
+        {/* outras rotas */}
+        <Route path="/usuarios" element={<Usuarios />} />
+      </Routes>
     </BrowserRouter>
   );
 }
