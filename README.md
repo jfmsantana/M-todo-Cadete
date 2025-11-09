@@ -1,1 +1,42 @@
-# M-todo-Cadete
+# Método Cadete
+O Cadete é uma Plataforma Educacional MVP (Produto Mínimo Viável) desenvolvida em 14 dias com foco em Autenticação, Gerenciamento de Conteúdo (Questões e Aulas) e Avaliação (Simulados e Redação).
+
+Este projeto utiliza uma arquitetura monolítica leve, empacotada em Docker Compose, para agilizar o desenvolvimento.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
