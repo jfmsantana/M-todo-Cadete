@@ -31,6 +31,7 @@ export default function Questoes() {
       const m = materia || undefined;
       const n = nivel || undefined;
       const data = await QuestoesAPI.listar(m, n);
+      console.log("🔍 Retorno do backend:", data);
       setLista(data);
     } catch (e) {
       setErr(e);

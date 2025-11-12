@@ -1,152 +1,149 @@
 import { useEffect, useState } from "react";
-import { QuestoesAPI } from "../api/questoes";
+import { useParams } from "react-router-dom";
 import { SimuladosAPI, TentativasAPI } from "../api/simulados";
 import Loader from "../components/Loader";
 import ErrorMsg from "../components/ErrorMsg";
 
 export default function Simulado() {
-  const [questoes, setQuestoes] = useState([]);
-  const [selecionadas, setSelecionadas] = useState([]);
-  const [titulo, setTitulo] = useState("Simulado Cadete");
-  const [simulados, setSimulados] = useState([]);
+  const { id } = useParams();              // simuladoId da URL
+  const [simulado, setSimulado] = useState(null);
   const [tentativa, setTentativa] = useState(null);
+  const [respostas, setRespostas] = useState({}); // { questaoId: "A"|"B"|"C"|"D" }
+  const [resultado, setResultado] = useState(null); // status final com acertos etc
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
 
-  async function carregar() {
-    try {
-      setLoading(true); setErr(null);
-      const [qs, sims] = await Promise.all([
-        QuestoesAPI.listar(),
-        SimuladosAPI.listar(),
-      ]);
-      setQuestoes(qs);
-      setSimulados(sims);
-    } catch (e) { setErr(e); }
-    finally { setLoading(false); }
-  }
-  useEffect(()=>{ carregar(); }, []);
+  // TODO: substituir por usuário logado quando tivermos auth
+  const alunoId = 3;
 
-  function toggleQuestao(id) {
-    setSelecionadas(s => s.includes(id) ? s.filter(x=>x!==id) : [...s, id]);
-  }
+  useEffect(() => {
+    async function init() {
+      try {
+        setLoading(true);
+        setErr(null);
+        const s = await SimuladosAPI.buscar(id);
+        setSimulado(s);
+      } catch (e) {
+        setErr(e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    init();
+  }, [id]);
 
-  async function criarSimulado() {
+  async function iniciar() {
     try {
       setErr(null);
-      await SimuladosAPI.criar(titulo, selecionadas);
-      setSelecionadas([]);
-      setTitulo("Simulado Cadete");
-      await carregar();
-      alert("Simulado criado!");
-    } catch (e) { setErr(e); }
+      const t = await TentativasAPI.iniciar(simulado.id, alunoId);
+      setTentativa(t); // { id, simuladoId, ... }
+    } catch (e) {
+      setErr(e);
+    }
   }
 
-  // MVP: alunoId fixo 1 (depois integramos login)
-  async function iniciar(simuladoId) {
-    const t = await TentativasAPI.iniciar(simuladoId, 1);
-    setTentativa(t);
+  function selecionar(idQuestao, letra) {
+    setRespostas(prev => ({ ...prev, [idQuestao]: letra }));
   }
 
-  async function marcar(questaoId, marcada) {
+  async function salvarRespostas() {
     if (!tentativa) return;
-    const respostas = [{ questaoId, marcada }];
-    const t = await TentativasAPI.responder(tentativa.id, respostas);
-    setTentativa(t); // não traz gabarito (EM_ANDAMENTO)
+    try {
+      setErr(null);
+      await TentativasAPI.responder(tentativa.id, respostas);
+      alert("Respostas salvas!");
+    } catch (e) {
+      setErr(e);
+    }
   }
 
   async function entregar() {
     if (!tentativa) return;
-    const r = await TentativasAPI.entregar(tentativa.id);
-    // Ao entregar, backend devolve gabarito
-    alert(`Entregue! ${r.acertos}/${r.total} acertos.`);
-    // Você pode guardar r.gabarito em um estado para exibir:
-    setTentativa({ ...tentativa, status:"ENTREGUE", gabarito: r.gabarito, acertos: r.acertos, total: r.total });
+    try {
+      setErr(null);
+      await TentativasAPI.responder(tentativa.id, respostas); // garante último estado
+      await TentativasAPI.entregar(tentativa.id);
+      const st = await TentativasAPI.status(tentativa.id);
+      setResultado(st); // { entregue:true, acertos: X, total: Y, gabarito: {questaoId: "B", ...} }
+    } catch (e) {
+      setErr(e);
+    }
   }
 
+  if (loading) return <Loader/>;
+  if (err) return <ErrorMsg error={err}/>;
+  if (!simulado) return null;
+
+  // array de questões (sua API pode retornar embed ou ids; adapte se vier como questaoIds e precisamos buscar)
+  const questoes = simulado.questoes || simulado.questaoList || [];
+
   return (
-    <div>
-      <h2>Simulados</h2>
-      {loading ? <Loader/> : <ErrorMsg error={err}/>}
-      <section style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:16}}>
-        <div>
-          <h3>Montar simulado (professor/admin)</h3>
-          <input value={titulo} onChange={e=>setTitulo(e.target.value)} placeholder="Título" />
-          <div style={{maxHeight:240, overflow:"auto", border:"1px solid #ddd", padding:8}}>
-            {questoes.map(q=>(
-              <label key={q.id} style={{display:"block"}}>
-                <input
-                  type="checkbox"
-                  checked={selecionadas.includes(q.id)}
-                  onChange={()=>toggleQuestao(q.id)}
-                />
-                #{q.id} [{q.materia}/{q.nivel}] {q.enunciado}
-              </label>
-            ))}
-          </div>
-          <button disabled={selecionadas.length===0} onClick={criarSimulado}>Criar simulado</button>
-        </div>
+      <div style={{ padding:20 }}>
+        <h2>Simulado: {simulado.titulo}</h2>
 
-        <div>
-          <h3>Simulados existentes</h3>
-          <ul>
-            {simulados.map(s=>(
-              <li key={s.id}>
-                <strong>#{s.id}</strong> {s.titulo} — {s.questoes?.length || 0} questões
-                <button onClick={()=>iniciar(s.id)} style={{marginLeft:8}}>Iniciar (Aluno)</button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
+        {!tentativa && !resultado && (
+            <button onClick={iniciar}>Iniciar tentativa</button>
+        )}
 
-      <hr />
-      <h3>Execução do simulado (Aluno)</h3>
-      {!tentativa ? <p>Nenhum simulado iniciado.</p> : (
-        <div>
-          <p><strong>Tentativa:</strong> #{tentativa.id} — Status: {tentativa.status}</p>
-          <p>Dica: clique para marcar A/B/C/D. O gabarito **só aparece na entrega**.</p>
+        {tentativa && !resultado && (
+            <>
+              <p><em>Tentativa #{tentativa.id}</em></p>
+              <ol>
+                {questoes.map((q, idx) => (
+                    <li key={q.id} style={{ marginBottom:16 }}>
+                      <div><strong>Q{idx+1}.</strong> {q.enunciado}</div>
+                      <div style={{ display:"grid", gap:6, marginTop:6 }}>
+                        {["A","B","C","D"].map((letra) => {
+                          const texto = q[`alternativa${letra}`];
+                          return (
+                              <label key={letra} style={{ display:"flex", gap:8, cursor:"pointer" }}>
+                                <input
+                                    type="radio"
+                                    name={`q${q.id}`}
+                                    checked={respostas[q.id] === letra}
+                                    onChange={() => selecionar(q.id, letra)}
+                                />
+                                <span>{letra}) {texto}</span>
+                              </label>
+                          );
+                        })}
+                      </div>
+                    </li>
+                ))}
+              </ol>
 
-          <ol>
-            {(tentativa.respostas || []).map(r=>{
-              const q = (tentativa.simulado?.questoes || []).find(qq => qq.id === r.questao.id) || r.questao;
-              const marcada = r.marcada?.trim();
-              const gabarito = tentativa.gabarito?.find(g => g.questaoId === q.id);
+              <div style={{ display:"flex", gap:8 }}>
+                <button onClick={salvarRespostas}>Salvar</button>
+                <button onClick={entregar}>Entregar</button>
+              </div>
+            </>
+        )}
 
-              return (
-                <li key={q.id} style={{marginBottom:16}}>
-                  <div><strong>#{q.id}</strong> {q.enunciado}</div>
-                  <div style={{display:"flex", gap:8, marginTop:6}}>
-                    {["A","B","C","D"].map((alt, idx)=>{
-                      const texto = q["alternativa"+alt];
-                      const isMarcada = marcada === alt;
-                      // Se entregue, colorir correta em verde e, se errou, marcada em vermelho
-                      let style={};
-                      if (tentativa.status==="ENTREGUE" && gabarito) {
-                        if (gabarito.correta === alt) style={ background:"rgba(0,200,0,0.15)" };
-                        if (!gabarito.acertou && isMarcada && gabarito.correta !== alt) style={ background:"rgba(200,0,0,0.15)" };
-                      } else if (isMarcada) {
-                        style={ border:"1px solid #333" };
-                      }
-                      return (
-                        <button key={alt} onClick={()=>marcar(q.id, alt)} style={style}>
-                          {alt}) {texto}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-
-          {tentativa.status !== "ENTREGUE" ? (
-            <button onClick={entregar}>Entregar simulado</button>
-          ) : (
-            <p><strong>Resultado:</strong> {tentativa.acertos}/{tentativa.total} (gabarito exibido acima)</p>
-          )}
-        </div>
-      )}
-    </div>
+        {resultado && (
+            <>
+              <h3>Resultado</h3>
+              <p>Acertos: {resultado.acertos} / {resultado.total}</p>
+              <h4>Gabarito</h4>
+              <ol>
+                {questoes.map((q, idx) => {
+                  const correta = resultado.gabarito?.[q.id];
+                  const marcada = resultado.marcadas?.[q.id];
+                  const corretaTxt = q[`alternativa${correta}`];
+                  const marcadaTxt = marcada ? q[`alternativa${marcada}`] : "-";
+                  const acertou = correta === marcada;
+                  return (
+                      <li key={q.id} style={{ marginBottom:10 }}>
+                        <div><strong>Q{idx+1}.</strong> {q.enunciado}</div>
+                        <div>Sua resposta: {marcada ? `${marcada}) ${marcadaTxt}` : "—"}</div>
+                        <div style={{ color: acertou ? "green" : "crimson" }}>
+                          Gabarito: {correta}) {corretaTxt} {acertou ? "✓" : "✗"}
+                        </div>
+                      </li>
+                  );
+                })}
+              </ol>
+            </>
+        )}
+      </div>
   );
 }

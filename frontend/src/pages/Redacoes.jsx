@@ -5,7 +5,7 @@ import ErrorMsg from "../components/ErrorMsg";
 
 export default function Redacoes() {
   const [lista, setLista] = useState([]);
-  const [form, setForm] = useState({ alunoId: 1, titulo: "", texto: "" });
+  const [form, setForm] = useState({ alunoId: 3, titulo: "", texto: "" });
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
 

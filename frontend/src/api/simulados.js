@@ -1,23 +1,23 @@
-import { apiFetch } from "./client";
+import api from "../services/api";
 
 export const SimuladosAPI = {
     criar: (titulo, questaoIds) =>
-        apiFetch("/api/simulados", { method: "POST", body: JSON.stringify({ titulo, questaoIds }) }),
-    listar: () => apiFetch("/api/simulados"),
-    buscar: (id) => apiFetch(`/api/simulados/${id}`),
+        api.post("/simulados", { titulo, questaoIds }).then((r) => r.data),
+    listar: () => api.get("/simulados").then((r) => r.data),
+    buscar: (id) => api.get(`/simulados/${id}`).then((r) => r.data),
 };
 
 export const TentativasAPI = {
     iniciar: (simuladoId, alunoId) =>
-        apiFetch(`/api/tentativas/simulado/${simuladoId}/iniciar`, {
-            method: "POST",
-            body: JSON.stringify({ alunoId }),
-        }),
+        api
+            .post(`/tentativas/simulado/${simuladoId}/iniciar`, { alunoId })
+            .then((r) => r.data),
     responder: (tentativaId, respostas) =>
-        apiFetch(`/api/tentativas/${tentativaId}/responder`, {
-            method: "POST",
-            body: JSON.stringify({ respostas }),
-        }),
-    status: (tentativaId) => apiFetch(`/api/tentativas/${tentativaId}/status`),
-    entregar: (tentativaId) => apiFetch(`/api/tentativas/${tentativaId}/entregar`, { method: "POST" }),
+        api
+            .post(`/tentativas/${tentativaId}/responder`, { respostas })
+            .then((r) => r.data),
+    status: (tentativaId) =>
+        api.get(`/tentativas/${tentativaId}/status`).then((r) => r.data),
+    entregar: (tentativaId) =>
+        api.post(`/tentativas/${tentativaId}/entregar`).then((r) => r.data),
 };
