@@ -43,6 +43,10 @@ public class RedacaoService {
         return redacaoRepo.findByAluno(aluno);
     }
 
+    public List<Redacao> listarPorStatus(Redacao.Status status) {
+        return redacaoRepo.findByStatus(status);
+    }
+
     // Na correção: professor aplica nota e feedback
     public Redacao corrigir(Long redacaoId, Long professorId, Double nota, String feedback) {
         Redacao r = buscar(redacaoId);

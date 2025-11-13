@@ -6,6 +6,7 @@ import Simulados from "./pages/Simulados";
 import Simulado from "./pages/Simulado";
 import Redacoes from "./pages/Redacoes";
 import FazerSimulado from "./pages/FazerSimulado.jsx";
+import Redacao from "./pages/Redacoes.jsx";
 
 export default function App() {
     return (
@@ -26,6 +27,7 @@ export default function App() {
                 <Route path="/simulado/:id" element={<Simulado />} />
                 <Route path="/redacoes" element={<Redacoes />} />
                 <Route path="/simulado/:id/fazer" element={<FazerSimulado />} />
+                <Route path="/redacoes" element={<Redacao />} />
             </Routes>
         </BrowserRouter>
     );

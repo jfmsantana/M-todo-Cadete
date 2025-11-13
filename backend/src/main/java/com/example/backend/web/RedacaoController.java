@@ -23,6 +23,12 @@ public class RedacaoController {
     @GetMapping
     public List<Redacao> listar() { return service.listarTodas(); }
 
+    @GetMapping(params = "status")
+    public List<Redacao> listarPorStatus(@RequestParam Redacao.Status status) {
+        return service.listarPorStatus(status);
+    }
+
+
     @GetMapping("/{id}")
     public Redacao buscar(@PathVariable Long id) { return service.buscar(id); }
 
