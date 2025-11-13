@@ -1,8 +1,7 @@
+// src/main/java/com/example/backend/service/SimuladoService.java
 package com.example.backend.service;
 
-import com.example.backend.model.Questao;
 import com.example.backend.model.Simulado;
-import com.example.backend.repository.QuestaoRepository;
 import com.example.backend.repository.SimuladoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -12,30 +11,30 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class SimuladoService {
+
     private final SimuladoRepository simuladoRepo;
-    private final QuestaoRepository questaoRepo;
 
-    public Simulado criar(String titulo, List<Long> questaoIds) {
-        if (titulo == null || titulo.isBlank())
-            throw new IllegalArgumentException("Título é obrigatório");
-        if (questaoIds == null || questaoIds.isEmpty())
-            throw new IllegalArgumentException("Selecione pelo menos 1 questão");
+    public List<Simulado> listar() {
+        return simuladoRepo.findAll();
+    }
 
-        List<Questao> questoes = questaoRepo.findAllById(questaoIds);
-        if (questoes.size() != questaoIds.size())
-            throw new IllegalArgumentException("Uma ou mais questões não existem");
+    public Simulado buscarPorId(Long id) {
+        return simuladoRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Simulado não encontrado: " + id));
+    }
 
-        Simulado s = Simulado.builder()
-                .titulo(titulo)
-                .questoes(questoes)
-                .build();
+    public Simulado criar(Simulado s) {
+        if (s.getTitulo() == null || s.getTitulo().isBlank()) {
+            throw new IllegalArgumentException("Título do simulado é obrigatório");
+        }
+        // descrição opcional; lista de questões pode estar vazia no início
         return simuladoRepo.save(s);
     }
 
-    public List<Simulado> listar() { return simuladoRepo.findAll(); }
-
-    public Simulado buscar(Long id) {
-        return simuladoRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Simulado não encontrado: " + id));
+    public void deletar(Long id) {
+        if (!simuladoRepo.existsById(id)) {
+            throw new IllegalArgumentException("Simulado não encontrado: " + id);
+        }
+        simuladoRepo.deleteById(id);
     }
 }

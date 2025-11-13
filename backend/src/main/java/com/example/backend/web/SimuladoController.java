@@ -1,8 +1,8 @@
+// src/main/java/com/example/backend/web/SimuladoController.java
 package com.example.backend.web;
 
 import com.example.backend.model.Simulado;
 import com.example.backend.service.SimuladoService;
-import com.example.backend.web.dto.SimuladoDTOs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,19 +10,33 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/simulados")
+@CrossOrigin(origins = "http://localhost:5173")
 @RequiredArgsConstructor
 public class SimuladoController {
 
-    private final SimuladoService service;
+    private final SimuladoService simuladoService;
 
-    @PostMapping
-    public Simulado criar(@RequestBody SimuladoDTOs.Criar body) {
-        return service.criar(body.getTitulo(), body.getQuestaoIds());
+    // LISTAR TODOS
+    @GetMapping
+    public List<Simulado> listar() {
+        return simuladoService.listar();
     }
 
-    @GetMapping
-    public List<Simulado> listar() { return service.listar(); }
-
+    // BUSCAR POR ID (usado pelo front para carregar questões do simulado)
     @GetMapping("/{id}")
-    public Simulado buscar(@PathVariable Long id) { return service.buscar(id); }
+    public Simulado buscarPorId(@PathVariable Long id) {
+        return simuladoService.buscarPorId(id);
+    }
+
+    // CRIAR SIMULADO (ADMIN/PROFESSOR)
+    @PostMapping
+    public Simulado criar(@RequestBody Simulado s) {
+        return simuladoService.criar(s);
+    }
+
+    // DELETAR SIMULADO (ADMIN/PROFESSOR)
+    @DeleteMapping("/{id}")
+    public void deletar(@PathVariable Long id) {
+        simuladoService.deletar(id);
+    }
 }

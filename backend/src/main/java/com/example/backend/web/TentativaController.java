@@ -1,3 +1,4 @@
+// src/main/java/com/example/backend/web/TentativaController.java
 package com.example.backend.web;
 
 import com.example.backend.model.Tentativa;
@@ -7,33 +8,36 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/tentativas")
+@RequestMapping("/api")
+@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class TentativaController {
 
-    private final TentativaService service;
+    private final TentativaService tentativaService;
 
-    // Inicia (ou retorna EM_ANDAMENTO) para um simulado/aluno
-    @PostMapping("/simulado/{simuladoId}/iniciar")
-    public Tentativa iniciar(@PathVariable Long simuladoId, @RequestBody TentativaDTOs.Iniciar body) {
-        return service.iniciar(simuladoId, body.getAlunoId());
+    @PostMapping("/simulados/{simuladoId}/iniciar")
+    public Tentativa iniciar(
+            @PathVariable Long simuladoId,
+            @RequestBody TentativaDTOs.IniciarRequest body
+    ) {
+        return tentativaService.iniciar(simuladoId, body.getAlunoId());
     }
 
-    // Envia marcações parciais/por bloco (não entrega)
-    @PostMapping("/{tentativaId}/responder")
-    public Tentativa responder(@PathVariable Long tentativaId, @RequestBody TentativaDTOs.Responder body) {
-        return service.responder(tentativaId, body.getRespostas());
+    @PostMapping("/tentativas/{tentativaId}/responder")
+    public Tentativa responder(
+            @PathVariable Long tentativaId,
+            @RequestBody TentativaDTOs.ResponderRequest body
+    ) {
+        return tentativaService.responder(tentativaId, body.getItens());
     }
 
-    // Entrega e devolve gabarito + nota
-    @PostMapping("/{tentativaId}/entregar")
+    @PostMapping("/tentativas/{tentativaId}/entregar")
     public TentativaDTOs.Resultado entregar(@PathVariable Long tentativaId) {
-        return service.entregar(tentativaId);
+        return tentativaService.entregar(tentativaId);
     }
 
-    // Consulta status sem gabarito (EM_ANDAMENTO) ou resumo (ENTREGUE)
-    @GetMapping("/{tentativaId}/status")
+    @GetMapping("/tentativas/{tentativaId}")
     public TentativaDTOs.Resultado status(@PathVariable Long tentativaId) {
-        return service.statusParcial(tentativaId);
+        return tentativaService.statusParcial(tentativaId);
     }
 }

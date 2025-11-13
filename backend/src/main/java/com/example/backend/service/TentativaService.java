@@ -1,3 +1,4 @@
+// src/main/java/com/example/backend/service/TentativaService.java
 package com.example.backend.service;
 
 import com.example.backend.model.*;
@@ -13,69 +14,80 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class TentativaService {
+
     private final TentativaRepository tentativaRepo;
     private final SimuladoRepository simuladoRepo;
     private final UsuarioRepository usuarioRepo;
     private final QuestaoRepository questaoRepo;
-    private final RespostaRepository respostaRepo;
+    private final RespostaSimuladoRepository respostaSimuladoRepo;
 
     public Tentativa iniciar(Long simuladoId, Long alunoId) {
-        Simulado s = simuladoRepo.findById(simuladoId)
+
+        Simulado simulado = simuladoRepo.findById(simuladoId)
                 .orElseThrow(() -> new IllegalArgumentException("Simulado não encontrado: " + simuladoId));
-        Usuario a = usuarioRepo.findById(alunoId)
+
+        Usuario aluno = usuarioRepo.findById(alunoId)
                 .orElseThrow(() -> new IllegalArgumentException("Aluno não encontrado: " + alunoId));
 
-        // se já houver EM_ANDAMENTO, retorna a mesma (não cria outra)
-        Optional<Tentativa> existente = tentativaRepo.findFirstBySimuladoAndAlunoAndStatus(
-                s, a, Tentativa.Status.EM_ANDAMENTO);
+        Optional<Tentativa> existente =
+                tentativaRepo.findFirstBySimuladoAndAlunoAndStatus(simulado, aluno, Tentativa.Status.EM_ANDAMENTO);
+
         if (existente.isPresent()) return existente.get();
 
-        Tentativa t = Tentativa.builder()
-                .simulado(s)
-                .aluno(a)
+        Tentativa tentativa = Tentativa.builder()
+                .simulado(simulado)
+                .aluno(aluno)
                 .status(Tentativa.Status.EM_ANDAMENTO)
                 .inicio(LocalDateTime.now())
-                .totalQuestoes(s.getQuestoes().size())
+                .totalQuestoes(simulado.getQuestoes().size())
                 .build();
 
-        // cria respostas em branco (sem correta ainda)
-        List<Resposta> respostas = s.getQuestoes().stream().map(q ->
-                Resposta.builder().tentativa(t).questao(q).marcada(" ").correta(false).build()
-        ).collect(Collectors.toList());
-        t.setRespostas(respostas);
-        return tentativaRepo.save(t); // cascade salva respostas também
+        List<RespostaSimulado> respostas = simulado.getQuestoes().stream()
+                .map(q -> RespostaSimulado.builder()
+                        .tentativa(tentativa)
+                        .questao(q)
+                        .marcada(" ")
+                        .correta(false)
+                        .build())
+                .collect(Collectors.toList());
+
+        tentativa.setRespostas(respostas);
+
+        return tentativaRepo.save(tentativa);
     }
 
     public Tentativa responder(Long tentativaId, List<TentativaDTOs.Item> itens) {
-        Tentativa t = tentativaRepo.findById(tentativaId)
+        Tentativa tentativa = tentativaRepo.findById(tentativaId)
                 .orElseThrow(() -> new IllegalArgumentException("Tentativa não encontrada: " + tentativaId));
-        if (t.getStatus() != Tentativa.Status.EM_ANDAMENTO)
-            throw new IllegalArgumentException("Tentativa não está em andamento");
 
-        // map questaoId->marcada
+        if (tentativa.getStatus() != Tentativa.Status.EM_ANDAMENTO)
+            throw new IllegalArgumentException("Tentativa não está em andamento.");
+
         Map<Long, String> mapa = itens.stream()
                 .collect(Collectors.toMap(TentativaDTOs.Item::getQuestaoId, TentativaDTOs.Item::getMarcada));
 
-        // atualiza marcadas nas respostas existentes
-        for (Resposta r : t.getRespostas()) {
+        for (RespostaSimulado r : tentativa.getRespostas()) {
             String marcada = mapa.get(r.getQuestao().getId());
-            if (marcada != null) r.setMarcada(marcada);
+            if (marcada != null) {
+                r.setMarcada(marcada);
+            }
         }
-        respostaRepo.saveAll(t.getRespostas());
-        return t;
+
+        respostaSimuladoRepo.saveAll(tentativa.getRespostas());
+        return tentativa;
     }
 
     public TentativaDTOs.Resultado entregar(Long tentativaId) {
-        Tentativa t = tentativaRepo.findById(tentativaId)
+        Tentativa tentativa = tentativaRepo.findById(tentativaId)
                 .orElseThrow(() -> new IllegalArgumentException("Tentativa não encontrada: " + tentativaId));
-        if (t.getStatus() != Tentativa.Status.EM_ANDAMENTO)
-            throw new IllegalArgumentException("Tentativa já foi entregue");
 
-        // corrige: compara marcada x correta de cada questão
+        if (tentativa.getStatus() != Tentativa.Status.EM_ANDAMENTO)
+            throw new IllegalArgumentException("Tentativa já foi entregue.");
+
         int acertos = 0;
         List<TentativaDTOs.GabaritoItem> gabarito = new ArrayList<>();
 
-        for (Resposta r : t.getRespostas()) {
+        for (RespostaSimulado r : tentativa.getRespostas()) {
             Questao q = r.getQuestao();
             boolean ok = q.getCorreta().equalsIgnoreCase(r.getMarcada());
             r.setCorreta(ok);
@@ -88,36 +100,35 @@ public class TentativaService {
             gi.setAcertou(ok);
             gabarito.add(gi);
         }
-        respostaRepo.saveAll(t.getRespostas());
 
-        t.setAcertos(acertos);
-        t.setEntrega(LocalDateTime.now());
-        t.setStatus(Tentativa.Status.ENTREGUE);
-        tentativaRepo.save(t);
+        respostaSimuladoRepo.saveAll(tentativa.getRespostas());
+
+        tentativa.setAcertos(acertos);
+        tentativa.setEntrega(LocalDateTime.now());
+        tentativa.setStatus(Tentativa.Status.ENTREGUE);
+        tentativaRepo.save(tentativa);
 
         TentativaDTOs.Resultado res = new TentativaDTOs.Resultado();
-        res.setTentativaId(t.getId());
+        res.setTentativaId(tentativa.getId());
+        res.setTotal(tentativa.getTotalQuestoes());
         res.setAcertos(acertos);
-        res.setTotal(t.getTotalQuestoes());
-        res.setGabarito(gabarito); // mostramos gabarito APÓS entrega
+        res.setGabarito(gabarito);
+
         return res;
     }
 
     public TentativaDTOs.Resultado statusParcial(Long tentativaId) {
-        Tentativa t = tentativaRepo.findById(tentativaId)
+        Tentativa tentativa = tentativaRepo.findById(tentativaId)
                 .orElseThrow(() -> new IllegalArgumentException("Tentativa não encontrada: " + tentativaId));
 
         TentativaDTOs.Resultado res = new TentativaDTOs.Resultado();
-        res.setTentativaId(t.getId());
-        res.setTotal(t.getTotalQuestoes());
+        res.setTentativaId(tentativa.getId());
+        res.setTotal(tentativa.getTotalQuestoes());
 
-        if (t.getStatus() == Tentativa.Status.ENTREGUE) {
-            res.setAcertos(t.getAcertos());
-            // após entregue, podemos incluir gabarito completo (se quiser reusar a entrega para consultar)
-            // aqui, por padrão, não devolvemos gabarito de novo
+        if (tentativa.getStatus() == Tentativa.Status.ENTREGUE) {
+            res.setAcertos(tentativa.getAcertos());
             res.setGabarito(null);
         } else {
-            // EM_ANDAMENTO: NÃO mostrar gabarito
             res.setAcertos(0);
             res.setGabarito(null);
         }

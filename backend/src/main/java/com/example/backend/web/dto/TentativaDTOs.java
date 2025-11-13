@@ -1,28 +1,28 @@
-// web/dto/TentativaDTOs.java
+// src/main/java/com/example/backend/web/dto/TentativaDTOs.java
 package com.example.backend.web.dto;
 
 import lombok.Data;
+
 import java.util.List;
 
 public class TentativaDTOs {
 
     @Data
-    public static class Iniciar {
+    public static class IniciarRequest {
         private Long alunoId;
-    }
-
-    @Data
-    public static class Responder {
-        private List<Item> respostas; // {questaoId, marcada}
     }
 
     @Data
     public static class Item {
         private Long questaoId;
-        private String marcada; // "A"|"B"|"C"|"D"
+        private String marcada;
     }
 
-    // resposta enviada ao frontend após ENTREGA
+    @Data
+    public static class ResponderRequest {
+        private List<Item> itens;
+    }
+
     @Data
     public static class GabaritoItem {
         private Long questaoId;
@@ -34,8 +34,8 @@ public class TentativaDTOs {
     @Data
     public static class Resultado {
         private Long tentativaId;
-        private int acertos;
         private int total;
-        private List<GabaritoItem> gabarito; // só preenchido se ENTREGUE
+        private int acertos;
+        private List<GabaritoItem> gabarito; // só após entrega
     }
 }

@@ -27,7 +27,7 @@ public class QuestaoService {
 
     public Questao criar(Questao q) { validar(q); return repo.save(q); }
 
-    public List<Questao> listar() { return repo.findAll(); }
+    public List<Questao> listar(String materia, String nivel) { return repo.findAll(); }
 
     public Questao buscar(Long id) {
         return repo.findById(id)

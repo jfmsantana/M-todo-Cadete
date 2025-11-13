@@ -1,0 +1,99 @@
+/* src/pages/Home.css */
+
+.home-page {
+    min-height: calc(100vh - 0px);
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    padding: 32px;
+    background: radial-gradient(circle at top left, #2563eb 0, #0f172a 60%);
+}
+
+.home-content {
+    max-width: 1100px;
+    width: 100%;
+    background: #f9fafb;
+    border-radius: 24px;
+    padding: 24px 28px 32px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.home-hero h1 {
+    font-size: 2.4rem;
+    margin-bottom: 0.5rem;
+    color: #111827;
+}
+
+.home-hero p {
+    margin: 0.2rem 0;
+    color: #4b5563;
+}
+
+.home-hero p strong {
+    color: #111827;
+}
+
+.home-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.home-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.12s ease, box-shadow 0.12s ease,
+    background 0.12s ease;
+}
+
+.home-card h2 {
+    margin: 0 0 0.3rem;
+    font-size: 1.1rem;
+    color: #111827;
+}
+
+.home-card p {
+    margin: 0 0 0.7rem;
+    font-size: 0.9rem;
+    color: #6b7280;
+}
+
+.home-card-link {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #2563eb;
+}
+
+.home-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.25);
+    background: #eef2ff;
+}
+
+/* responsivo */
+
+@media (max-width: 900px) {
+    .home-page {
+        padding: 16px;
+    }
+
+    .home-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .home-grid {
+        grid-template-columns: 1fr;
+    }
+}
