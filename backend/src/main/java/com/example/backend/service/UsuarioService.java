@@ -49,8 +49,12 @@ public class UsuarioService {
     }
 
     public Usuario criar(Usuario u) {
-        if (u.getEmail() == null || u.getEmail().isBlank()) {
+        if ((u.getEmail() == null) || u.getEmail().isBlank()) {
             throw new IllegalArgumentException("E-mail é obrigatório");
+        }
+        if (u.getSenha() == null || u.getSenha().isBlank()) {
+            // segurança extra: se chegar sem senha, força a padrão
+            u.setSenha("metodocadete");
         }
         return repo.save(u);
     }

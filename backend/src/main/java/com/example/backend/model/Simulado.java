@@ -2,6 +2,8 @@ package com.example.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -23,5 +25,5 @@ public class Simulado {
             joinColumns = @JoinColumn(name = "simulado_id"),
             inverseJoinColumns = @JoinColumn(name = "questao_id"))
     @OrderColumn(name = "ordem") // mantém ordem definida na lista
-    private List<Questao> questoes;
+    private List<Questao> questoes = new ArrayList<>();
 }

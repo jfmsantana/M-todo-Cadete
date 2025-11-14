@@ -4,6 +4,7 @@ import Layout from "../components/Layout";
 import { RedacoesAPI } from "../api/redacoes";
 import Loader from "../components/Loader";
 import ErrorMsg from "../components/ErrorMsg";
+import "./Redacoes.css";
 
 function getUsuarioLogado() {
   try {
@@ -19,17 +20,17 @@ export default function Redacoes() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
 
-  // ALUNO form
   const [form, setForm] = useState({ titulo: "", texto: "" });
   const [minhas, setMinhas] = useState([]);
 
-  // PROF/ADMIN listagem e correção
-  const [filtro, setFiltro] = useState("PENDENTE"); // PENDENTE | CORRIGIDA | TODAS
+  const [filtro, setFiltro] = useState("PENDENTE");
   const [lista, setLista] = useState([]);
 
-  // Estado de correção
   const [corrigindoId, setCorrigindoId] = useState(null);
-  const [corrigirForm, setCorrigirForm] = useState({ nota: "", feedback: "" });
+  const [corrigirForm, setCorrigirForm] = useState({
+    nota: "",
+    feedback: "",
+  });
 
   useEffect(() => {
     const u = getUsuarioLogado();
@@ -72,7 +73,6 @@ export default function Redacoes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.perfil, filtro]);
 
-  // ALUNO: enviar
   async function enviarRedacao(e) {
     e.preventDefault();
     try {
@@ -90,7 +90,6 @@ export default function Redacoes() {
     }
   }
 
-  // PROF/ADMIN: correção
   function abrirCorrecao(r) {
     setCorrigindoId(r.id);
     setCorrigirForm({
@@ -126,35 +125,28 @@ export default function Redacoes() {
 
   return (
       <Layout title="Redações">
-        <div className="page-root">
-          {/* HERO */}
-          <section className="page-hero page-hero--redacoes">
-            <div className="page-hero-main">
-              <h2>Redações</h2>
-              <p>
-                Envie suas produções (aluno) ou corrija com nota e feedback
-                detalhado (professor/admin).
+        <div className="page-shell">
+          <div className="page-header-row">
+            <div>
+              <h2 className="page-title">Redações</h2>
+              <p className="page-subtitle">
+                Envie textos como aluno e corrija como professor ou administrador.
               </p>
             </div>
-            <div className="page-hero-badge">✍️ Produção de texto</div>
-          </section>
+          </div>
 
-          {/* Estado global */}
           {loading && <Loader />}
           {err && <ErrorMsg error={err} />}
 
-          {/* BLOCO ALUNO */}
           {isAluno && (
-              <div className="card section-card">
-                <h3>Enviar nova redação</h3>
+              <div className="card-elevated">
+                <h3 className="card-title">Enviar nova redação</h3>
+                <p className="card-subtitle">
+                  Escreva sua redação e envie para correção.
+                </p>
                 <form
                     onSubmit={enviarRedacao}
-                    style={{
-                      display: "grid",
-                      gap: 10,
-                      maxWidth: 700,
-                      marginTop: 8,
-                    }}
+                    className="redacao-form"
                 >
                   <input
                       className="input"
@@ -175,18 +167,20 @@ export default function Redacoes() {
                           setForm((f) => ({ ...f, texto: e.target.value }))
                       }
                   />
-                  <button type="submit">Enviar</button>
+                  <button type="submit" className="btn-primary">
+                    Enviar
+                  </button>
                 </form>
 
-                <hr style={{ margin: "16px 0" }} />
+                <hr className="section-divider" />
 
-                <h3>Minhas redações</h3>
+                <h3 className="card-title">Minhas redações</h3>
                 {minhas.length === 0 ? (
-                    <p>Nenhuma redação enviada.</p>
+                    <p className="muted">Nenhuma redação enviada.</p>
                 ) : (
-                    <ul>
+                    <ul className="lista-redacoes">
                       {minhas.map((r) => (
-                          <li key={r.id} style={{ marginBottom: 12 }}>
+                          <li key={r.id}>
                             <strong>#{r.id}</strong> — {r.titulo} — {r.status}
                             {r.status === "CORRIGIDA" && (
                                 <>
@@ -202,21 +196,12 @@ export default function Redacoes() {
               </div>
           )}
 
-          {/* BLOCO PROFESSOR/ADMIN */}
           {isProfOuAdmin && (
-              <div className="card section-card">
-                <div
-                    style={{
-                      display: "flex",
-                      gap: 12,
-                      alignItems: "center",
-                      marginBottom: 10,
-                    }}
-                >
-                  <h3 style={{ margin: 0 }}>Correções de redações</h3>
+              <div className="card-elevated">
+                <div className="redacoes-toolbar">
+                  <h3 className="card-title">Correções de redações</h3>
                   <select
-                      className="input"
-                      style={{ maxWidth: 180 }}
+                      className="input slim"
                       value={filtro}
                       onChange={(e) => setFiltro(e.target.value)}
                   >
@@ -224,26 +209,18 @@ export default function Redacoes() {
                     <option value="CORRIGIDA">Corrigidas</option>
                     <option value="TODAS">Todas</option>
                   </select>
-                  <button onClick={carregar}>Atualizar</button>
+                  <button className="btn-ghost" onClick={carregar}>
+                    Atualizar
+                  </button>
                 </div>
 
                 {lista.length === 0 ? (
-                    <p>Sem redações no filtro atual.</p>
+                    <p className="muted">Sem redações no filtro atual.</p>
                 ) : (
-                    <ul style={{ listStyle: "none", padding: 0 }}>
+                    <ul className="lista-correcoes">
                       {lista.map((r) => (
-                          <li
-                              key={r.id}
-                              className="list-item-card"
-                          >
-                            <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                  gap: 8,
-                                }}
-                            >
+                          <li key={r.id} className="correcao-item">
+                            <div className="correcao-header">
                               <div>
                                 <strong>#{r.id}</strong> —{" "}
                                 <strong>{r.titulo}</strong> — {r.status}
@@ -253,44 +230,25 @@ export default function Redacoes() {
                                 </small>
                               </div>
                               {r.status === "PENDENTE" && (
-                                  <button onClick={() => abrirCorrecao(r)}>
+                                  <button
+                                      className="btn-primary"
+                                      type="button"
+                                      onClick={() => abrirCorrecao(r)}
+                                  >
                                     Corrigir
                                   </button>
                               )}
                             </div>
 
-                            <details style={{ marginTop: 8 }}>
+                            <details className="correcao-details">
                               <summary>Ver texto</summary>
-                              <pre
-                                  style={{
-                                    whiteSpace: "pre-wrap",
-                                    background: "#fafafa",
-                                    padding: 10,
-                                    borderRadius: 6,
-                                    marginTop: 6,
-                                  }}
-                              >
-                        {r.texto}
-                      </pre>
+                              <pre className="correcao-texto">{r.texto}</pre>
                             </details>
 
                             {corrigindoId === r.id && (
-                                <div
-                                    style={{
-                                      marginTop: 12,
-                                      background: "#f8f8ff",
-                                      padding: 12,
-                                      borderRadius: 8,
-                                    }}
-                                >
+                                <div className="correcao-panel">
                                   <h4>Aplicar nota e feedback</h4>
-                                  <div
-                                      style={{
-                                        display: "grid",
-                                        gap: 8,
-                                        maxWidth: 500,
-                                      }}
-                                  >
+                                  <div className="correcao-form-grid">
                                     <input
                                         className="input"
                                         type="number"
@@ -316,16 +274,19 @@ export default function Redacoes() {
                                             }))
                                         }
                                     />
-                                    <div
-                                        style={{
-                                          display: "flex",
-                                          gap: 8,
-                                        }}
-                                    >
-                                      <button onClick={confirmarCorrecao} type="button">
+                                    <div className="correcao-actions">
+                                      <button
+                                          onClick={confirmarCorrecao}
+                                          type="button"
+                                          className="btn-primary"
+                                      >
                                         Salvar correção
                                       </button>
-                                      <button onClick={cancelarCorrecao} type="button">
+                                      <button
+                                          onClick={cancelarCorrecao}
+                                          type="button"
+                                          className="btn-ghost"
+                                      >
                                         Cancelar
                                       </button>
                                     </div>
@@ -334,7 +295,7 @@ export default function Redacoes() {
                             )}
 
                             {r.status === "CORRIGIDA" && (
-                                <div style={{ marginTop: 8 }}>
+                                <div className="correcao-resumo">
                                   <strong>Nota:</strong> {r.nota}{" "}
                                   {r.feedback && (
                                       <>

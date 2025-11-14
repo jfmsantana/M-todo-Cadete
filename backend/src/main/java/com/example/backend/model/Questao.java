@@ -1,7 +1,11 @@
 package com.example.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "questoes")
@@ -15,6 +19,10 @@ public class Questao {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String enunciado;
+
+    @ManyToMany(mappedBy = "questoes")
+    @JsonIgnore
+    private List<Simulado> simulados = new ArrayList<>();
 
     @Column(nullable = false) private String alternativaA;
     @Column(nullable = false) private String alternativaB;

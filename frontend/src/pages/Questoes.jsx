@@ -45,7 +45,6 @@ export default function Questoes() {
   });
 
   const [user, setUser] = useState(null);
-
   const [selecionadas, setSelecionadas] = useState({});
   const [corrigidas, setCorrigidas] = useState({});
 
@@ -76,6 +75,7 @@ export default function Questoes() {
 
   useEffect(() => {
     carregar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [materia, nivel]);
 
   async function criar(e) {
@@ -116,15 +116,18 @@ export default function Questoes() {
     setCorrigidas((prev) => ({ ...prev, [q.id]: true }));
 
     try {
-      const resp = await fetch("http://localhost:8080/api/questoes/responder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          usuarioId: user.id,
-          questaoId: q.id,
-          alternativa: marcada,
-        }),
-      });
+      const resp = await fetch(
+          "http://localhost:8080/api/questoes/responder",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              usuarioId: user.id,
+              questaoId: q.id,
+              alternativa: marcada,
+            }),
+          }
+      );
 
       if (!resp.ok) {
         const text = await resp.text();
@@ -133,7 +136,7 @@ export default function Questoes() {
       }
 
       const data = await resp.json();
-      setStats(data); // {correta, alternativaCorreta, totalRespondidas, totalAcertos, aproveitamento}
+      setStats(data);
     } catch (e) {
       console.error("Erro na requisição /responder:", e);
     }
@@ -141,25 +144,24 @@ export default function Questoes() {
 
   return (
       <Layout title="Banco de Questões">
-        <div className="page-root">
-          {/* HERO */}
-          <section className="page-hero page-hero--questoes">
-            <div className="page-hero-main">
-              <h2>Banco de Questões</h2>
-              <p>
-                Filtre por matéria e nível, resolva como aluno ou gerencie as
-                questões como professor/admin.
+        <div className="page-shell">
+          <div className="page-header-row">
+            <div>
+              <h2 className="page-title">Banco de Questões</h2>
+              <p className="page-subtitle">
+                Filtre, cadastre e resolva questões de forma organizada.
               </p>
             </div>
-            <div className="page-hero-badge">📝 Questões objetivas</div>
-          </section>
+          </div>
 
-          {/* COLUNAS: FILTROS + CRIAR */}
-          <div className="page-columns">
+          <div className="grid grid-2">
             {/* Filtros */}
-            <div className="card section-card">
-              <h3 style={{ marginTop: 0 }}>Filtros</h3>
-              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <div className="card card-elevated">
+              <h3 className="card-title">Filtros</h3>
+              <p className="card-subtitle">
+                Selecione matéria e nível para encontrar as questões certas.
+              </p>
+              <div className="card-row">
                 <select
                     className="input"
                     value={materia}
@@ -180,7 +182,7 @@ export default function Questoes() {
                       <option key={n}>{n}</option>
                   ))}
                 </select>
-                <button type="button" onClick={carregar}>
+                <button type="button" className="btn-primary" onClick={carregar}>
                   Atualizar
                 </button>
               </div>
@@ -188,8 +190,11 @@ export default function Questoes() {
 
             {/* Criar questão – somente gestor */}
             {isGestor && (
-                <div className="card section-card">
-                  <h3 style={{ marginTop: 0 }}>Criar questão</h3>
+                <div className="card card-elevated">
+                  <h3 className="card-title">Criar questão</h3>
+                  <p className="card-subtitle">
+                    Preencha o enunciado, alternativas e marque a correta.
+                  </p>
                   <form
                       onSubmit={criar}
                       className="grid"
@@ -237,13 +242,7 @@ export default function Questoes() {
                         }
                     />
 
-                    <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(3,1fr)",
-                          gap: 10,
-                        }}
-                    >
+                    <div className="triple-row">
                       <select
                           className="input"
                           value={form.correta}
@@ -279,16 +278,10 @@ export default function Questoes() {
                       </select>
                     </div>
 
-                    <div
-                        style={{
-                          display: "flex",
-                          gap: 8,
-                          justifyContent: "flex-end",
-                          marginTop: 4,
-                        }}
-                    >
+                    <div className="card-actions-right">
                       <button
                           type="button"
+                          className="btn-ghost"
                           onClick={() =>
                               setForm((f) => ({
                                 ...f,
@@ -302,7 +295,9 @@ export default function Questoes() {
                       >
                         Limpar
                       </button>
-                      <button type="submit">Salvar</button>
+                      <button type="submit" className="btn-primary">
+                        Salvar
+                      </button>
                     </div>
                   </form>
                 </div>
@@ -310,8 +305,8 @@ export default function Questoes() {
           </div>
 
           {/* Lista / resolução */}
-          <div className="card section-card">
-            <h3 style={{ marginTop: 0 }}>Questões</h3>
+          <div className="card card-elevated" style={{ marginTop: 16 }}>
+            <h3 className="card-title">Questões</h3>
 
             {err && (
                 <div style={{ marginBottom: 8 }}>
@@ -322,14 +317,13 @@ export default function Questoes() {
             {loading ? (
                 <Loader />
             ) : lista.length === 0 ? (
-                <p style={{ color: "#6b7280" }}>Nenhuma questão.</p>
+                <p className="muted">Nenhuma questão.</p>
             ) : isGestor ? (
-                // visão de gestor
-                <ul style={{ paddingLeft: 18, lineHeight: 1.7 }}>
+                <ul className="lista-gestor">
                   {lista.map((q) => (
                       <li key={q.id}>
                         <strong>#{q.id}</strong>{" "}
-                        <span style={{ opacity: 0.8 }}>
+                        <span className="tag-light">
                     [{q.materia} / {q.nivel}]
                   </span>{" "}
                         — {q.enunciado}
@@ -337,7 +331,6 @@ export default function Questoes() {
                   ))}
                 </ul>
             ) : (
-                // visão de aluno
                 <div className="questoes-aluno">
                   {stats && (
                       <div className="questoes-stats">

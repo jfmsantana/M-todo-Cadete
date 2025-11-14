@@ -1,0 +1,164 @@
+.page-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.page-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.page-title {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.page-subtitle {
+    margin: 4px 0 0;
+    font-size: 0.95rem;
+    color: #6b7280;
+}
+
+.card-elevated {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
+}
+
+.card-title {
+    margin: 0 0 4px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.card-subtitle {
+    margin: 0 0 12px;
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.redacao-form {
+    display: grid;
+    gap: 10px;
+    max-width: 720px;
+    margin-top: 8px;
+}
+
+.section-divider {
+    margin: 18px 0;
+    border: none;
+    border-top: 1px solid #e5e7eb;
+}
+
+.lista-redacoes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.lista-redacoes li {
+    padding: 6px 0;
+    border-bottom: 1px dashed #e5e7eb;
+    color: #111827;
+}
+
+.muted {
+    color: #6b7280;
+}
+
+.redacoes-toolbar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.redacoes-toolbar .input.slim {
+    max-width: 200px;
+}
+
+.lista-correcoes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.correcao-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.9rem;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #f9fafb;
+}
+
+.correcao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.correcao-details {
+    margin-top: 8px;
+}
+
+.correcao-texto {
+    white-space: pre-wrap;
+    background: #ffffff;
+    padding: 10px;
+    border-radius: 6px;
+    margin-top: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.correcao-panel {
+    margin-top: 12px;
+    background: #f8f8ff;
+    padding: 12px;
+    border-radius: 8px;
+}
+
+.correcao-form-grid {
+    display: grid;
+    gap: 8px;
+    max-width: 500px;
+}
+
+.correcao-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.correcao-resumo {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #111827;
+}
+
+/* botões básicos (pode reaproveitar de outros arquivos) */
+
+.btn-primary {
+    border: none;
+    border-radius: 999px;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+}
+
+.btn-ghost {
+    border-radius: 999px;
+    padding: 0.55rem 1rem;
+    font-size: 0.85rem;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    cursor: pointer;
+}

@@ -1,0 +1,30 @@
+.usuarios-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.usuarios-form {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 2fr) auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.usuarios-tabela {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.usuarios-tabela th,
+.usuarios-tabela td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 6px 8px;
+    text-align: left;
+}
+
+.usuarios-tabela th {
+    background: #f9fafb;
+    font-weight: 600;
+}
