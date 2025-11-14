@@ -3,8 +3,8 @@ package com.example.backend.web;
 
 import com.example.backend.model.Questao;
 import com.example.backend.model.Usuario;
-import com.example.backend.service.QuestaoService;
 import com.example.backend.service.QuestaoRespostaService;
+import com.example.backend.service.QuestaoService;
 import com.example.backend.service.UsuarioService;
 import com.example.backend.web.dto.QuestaoRespostaDTOs;
 import lombok.RequiredArgsConstructor;
@@ -28,16 +28,20 @@ public class QuestaoController {
         if (u.getPerfil() != Usuario.Perfil.ADMIN &&
                 u.getPerfil() != Usuario.Perfil.PROFESSOR) {
 
-            throw new RuntimeException("Acesso negado: apenas ADMIN ou PROFESSOR podem gerenciar questões.");
+            throw new RuntimeException(
+                    "Acesso negado: apenas ADMIN ou PROFESSOR podem gerenciar questões."
+            );
         }
     }
 
     // ------------ LISTAR QUESTÕES (ALUNO/PROF/ADMIN) ------------
+    // Agora só existe UM @GetMapping, com filtro opcional por matéria / nível
     @GetMapping
     public List<Questao> listar(
             @RequestParam(required = false) String materia,
             @RequestParam(required = false) String nivel
     ) {
+        // delega a lógica de filtro para o service
         return questaoService.listar(materia, nivel);
     }
 

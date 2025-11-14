@@ -346,7 +346,8 @@ export default function Questoes() {
                   {lista.map((q) => {
                     const marcada = selecionadas[q.id];
                     const corrigida = !!corrigidas[q.id];
-                    const acertou = corrigida && marcada && marcada === q.correta;
+                    const acertou =
+                        corrigida && marcada && marcada === q.correta;
 
                     return (
                         <div key={q.id} className="questao-box">
@@ -377,7 +378,9 @@ export default function Questoes() {
                                   <label
                                       key={letra}
                                       className={className}
-                                      onClick={() => selecionarAlternativa(q.id, letra)}
+                                      onClick={() =>
+                                          selecionarAlternativa(q.id, letra)
+                                      }
                                   >
                                     <input
                                         type="radio"

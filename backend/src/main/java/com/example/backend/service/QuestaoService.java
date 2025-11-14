@@ -27,8 +27,6 @@ public class QuestaoService {
 
     public Questao criar(Questao q) { validar(q); return repo.save(q); }
 
-    public List<Questao> listar(String materia, String nivel) { return repo.findAll(); }
-
     public Questao buscar(Long id) {
         return repo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Questão não encontrada: " + id));
@@ -53,10 +51,43 @@ public class QuestaoService {
         repo.deleteById(id);
     }
 
-    public List<Questao> filtrar(Materia materia, Nivel nivel) {
-        if (materia != null && nivel != null) return repo.findByMateriaAndNivel(materia, nivel);
-        if (materia != null) return repo.findByMateria(materia);
-        if (nivel != null) return repo.findByNivel(nivel);
-        return repo.findAll();
+    public List<Questao> listar(String materia, String nivel) {
+        boolean temMateria = materia != null && !materia.isBlank();
+        boolean temNivel = nivel != null && !nivel.isBlank();
+
+        // Nenhum filtro -> todas as questões
+        if (!temMateria && !temNivel) {
+            return repo.findAll();
+        }
+
+        // Só matéria
+        if (temMateria && !temNivel) {
+            try {
+                Materia mat = Materia.valueOf(materia.toUpperCase());
+                return repo.findByMateria(mat);
+            } catch (IllegalArgumentException e) {
+                // se vier valor inválido, devolve tudo pra não quebrar
+                return repo.findAll();
+            }
+        }
+
+        // Só nível
+        if (!temMateria && temNivel) {
+            try {
+                Nivel niv = Nivel.valueOf(nivel.toUpperCase());
+                return repo.findByNivel(niv);
+            } catch (IllegalArgumentException e) {
+                return repo.findAll();
+            }
+        }
+
+        // Matéria e nível juntos
+        try {
+            Materia mat = Materia.valueOf(materia.toUpperCase());
+            Nivel niv = Nivel.valueOf(nivel.toUpperCase());
+            return repo.findByMateriaAndNivel(mat, niv);
+        } catch (IllegalArgumentException e) {
+            return repo.findAll();
+        }
     }
 }

@@ -1,5 +1,7 @@
 package com.example.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.Transient;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,6 +41,22 @@ public class Questao {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Nivel nivel; // FIXACAO, NIVELAMENTO, CONCURSO
+
+    @Transient
+    @JsonProperty("statusUso")
+    public String getStatusUso() {
+        if (simulados == null || simulados.isEmpty()) {
+            return null; // ou "Nunca utilizada em simulados" se preferir
+        }
+
+        if (simulados.size() == 1) {
+            return "Já utilizada no Simulado " + simulados.get(0).getTitulo();
+        }
+
+        // se já foi usada em vários, mostramos algo mais genérico
+        return "Já utilizada em " + simulados.size() +
+                " simulados (ex.: " + simulados.get(0).getTitulo() + ")";
+    }
 
     public enum Materia { PORTUGUES, MATEMATICA, INGLES }
     public enum Nivel { FIXACAO, NIVELAMENTO, CONCURSO }
