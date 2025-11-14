@@ -1,58 +1,37 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  # 1. SERVIÇO DE BANCO DE DADOS POSTGRESQL
-  postgres:
-    image: postgres:15-alpine
-    container_name: cadete-postgres
-    restart: always
+  db:
+    image: postgres:16
+    container_name: cadete-db
     environment:
-      # Credenciais do banco (usadas pelo Spring Boot)
-      POSTGRES_USER: user_cadete
-      POSTGRES_PASSWORD: password_cadete
-      POSTGRES_DB: db_cadete
-    ports:
-      - "5432:5432" # Mapeia a porta do container para sua máquina
+      POSTGRES_DB: cadete
+      POSTGRES_USER: cadete
+      POSTGRES_PASSWORD: cadete
     volumes:
-      - postgres_data:/var/lib/postgresql/data # Persistência de dados
+      - db_data:/var/lib/postgresql/data
 
-  # 2. SERVIÇO BACKEND (SPRING BOOT)
   backend:
-    # Usando a JDK 17, conforme definido no Initializr
-    image: eclipse-temurin:17-jdk-alpine
+    build: ./backend
     container_name: cadete-backend
-    working_dir: /app
-    volumes:
-      - ./backend:/app # Mapeia sua pasta local 'backend' para dentro do container
+    depends_on:
+      - db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/cadete
+      SPRING_DATASOURCE_USERNAME: cadete
+      SPRING_DATASOURCE_PASSWORD: cadete
+      # se quiser forçar:
+      # SPRING_JPA_HIBERNATE_DDL_AUTO: update
     ports:
       - "8080:8080"
-    # Comando para executar o Spring Boot
-    command: ./mvnw spring-boot:run
-    depends_on:
-      - postgres
-    environment:
-      # Configurações para a conexão com o banco de dados
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/db_cadete
-      SPRING_DATASOURCE_USERNAME: user_cadete
-      SPRING_DATASOURCE_PASSWORD: password_cadete
-      # DDL-AUTO: Responsável por criar as tabelas a partir das Entidades JPA (Dia 2)
-      SPRING_JPA_HIBERNATE_DDL_AUTO: create-drop
 
-  # 3. SERVIÇO FRONTEND (REACT/VITE - Modo Desenvolvimento)
   frontend:
-    # Garante que usa uma versão moderna do Node (v20)
-    image: node:20-alpine
+    build: ./frontend
     container_name: cadete-frontend
-    working_dir: /app
-    volumes:
-      - ./frontend:/app # Mapeia sua pasta local 'frontend' para dentro do container
-    ports:
-      - "5173:5173"
-    # Instala dependências (se necessário) e roda o Vite
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     depends_on:
       - backend
+    ports:
+      - "5173:80"   # navegador acessa :5173, Nginx responde na 80 dentro do container
 
-# Volume para persistir os dados do Postgres
 volumes:
-  postgres_data:
+  db_data:
