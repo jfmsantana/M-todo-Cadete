@@ -1,101 +1,171 @@
+// src/pages/Usuarios.jsx
 import { useEffect, useState } from "react";
-import api from "../services/api";
+import Layout from "../components/Layout";
+import Loader from "../components/Loader";
+import ErrorMsg from "../components/ErrorMsg";
+// ajuste o caminho/nome conforme seu projeto
+import { UsuariosAPI } from "../api/usuarios";
 
 const PERFIS = ["ALUNO", "PROFESSOR", "ADMIN"];
 
 export default function Usuarios() {
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [perfil, setPerfil] = useState("ALUNO");
+
   const [lista, setLista] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [erro, setErro] = useState(null);
-
-  const [form, setForm] = useState({
-    email: "",
-    senha: "",
-    perfil: "ALUNO",
-  });
+  const [err, setErr] = useState(null);
 
   async function carregar() {
     try {
       setLoading(true);
-      setErro(null);
-      const res = await api.get("/usuarios");
-      setLista(res.data);
+      setErr(null);
+      const data = await UsuariosAPI.listar(); // GET /api/usuarios
+      setLista(data);
     } catch (e) {
-      setErro(e.response?.data || e.message);
+      setErr(e.response?.data || e.message);
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { carregar(); }, []);
+  useEffect(() => {
+    carregar();
+  }, []);
 
-  async function onSubmit(e) {
+  async function criar(e) {
     e.preventDefault();
     try {
-      setErro(null);
-      await api.post("/usuarios", form);
-      setForm({ email: "", senha: "", perfil: "ALUNO" });
+      setErr(null);
+      await UsuariosAPI.criar({
+        email: email.trim(),
+        senha: senha.trim(),
+        perfil,
+      });
+      setEmail("");
+      setSenha("");
+      setPerfil("ALUNO");
       await carregar();
+      alert("Usuário cadastrado com sucesso!");
     } catch (e) {
-      setErro(e.response?.data || e.message);
+      setErr(e.response?.data || e.message);
     }
   }
 
   return (
-    <div style={{ padding: 20, maxWidth: 700 }}>
-      <h2>Usuários</h2>
+      <Layout title="Usuários">
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* bloco form */}
+          <div className="card">
+            <h2 style={{ marginTop: 0, marginBottom: 12 }}>Cadastro de usuários</h2>
 
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 10, maxWidth: 400 }}>
-        <input
-          type="email"
-          required
-          placeholder="E-mail"
-          value={form.email}
-          onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
-        />
-        <input
-          type="password"
-          required
-          placeholder="Senha"
-          value={form.senha}
-          onChange={(e) => setForm(f => ({ ...f, senha: e.target.value }))}
-        />
-        <label>
-          Perfil:
-          <select
-            value={form.perfil}
-            onChange={(e) => setForm(f => ({ ...f, perfil: e.target.value }))}
-          >
-            {PERFIS.map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
-        </label>
-        <button type="submit">Cadastrar</button>
-      </form>
+            {err && (
+                <div style={{ marginBottom: 8 }}>
+                  <ErrorMsg error={err} />
+                </div>
+            )}
 
-      {erro && <p style={{ color: "crimson" }}>Erro: {String(erro)}</p>}
-      {loading ? <p>Carregando...</p> : null}
+            <form
+                onSubmit={criar}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "2fr 2fr 1fr auto",
+                  gap: 8,
+                  alignItems: "center",
+                }}
+            >
+              <input
+                  className="input"
+                  placeholder="E-mail"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+              />
+              <input
+                  className="input"
+                  placeholder="Senha"
+                  type="password"
+                  required
+                  value={senha}
+                  onChange={(e) => setSenha(e.target.value)}
+              />
+              <select
+                  className="input"
+                  value={perfil}
+                  onChange={(e) => setPerfil(e.target.value)}
+              >
+                {PERFIS.map((p) => (
+                    <option key={p}>{p}</option>
+                ))}
+              </select>
+              <button type="submit">Cadastrar</button>
+            </form>
+          </div>
 
-      <hr />
+          {/* bloco lista */}
+          <div className="card">
+            <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 8,
+                }}
+            >
+              <h3 style={{ margin: 0 }}>Lista de usuários</h3>
+              <button type="button" onClick={carregar}>
+                Atualizar
+              </button>
+            </div>
 
-      <h3>Lista</h3>
-      {lista.length === 0 ? <p>Nenhum usuário.</p> :
-        <table border="1" cellPadding="6">
-          <thead>
-            <tr>
-              <th>ID</th><th>E-mail</th><th>Perfil</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lista.map(u => (
-              <tr key={u.id}>
-                <td>{u.id}</td>
-                <td>{u.email}</td>
-                <td>{u.perfil}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      }
-    </div>
+            {loading ? (
+                <Loader />
+            ) : lista.length === 0 ? (
+                <p>Nenhum usuário cadastrado.</p>
+            ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table
+                      style={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        fontSize: "0.9rem",
+                      }}
+                  >
+                    <thead>
+                    <tr>
+                      <th style={thStyle}>ID</th>
+                      <th style={thStyle}>E-mail</th>
+                      <th style={thStyle}>Perfil</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {lista.map((u) => (
+                        <tr key={u.id}>
+                          <td style={tdStyle}>{u.id}</td>
+                          <td style={tdStyle}>{u.email}</td>
+                          <td style={tdStyle}>{u.perfil}</td>
+                        </tr>
+                    ))}
+                    </tbody>
+                  </table>
+                </div>
+            )}
+          </div>
+        </div>
+      </Layout>
   );
 }
+
+const thStyle = {
+  textAlign: "left",
+  padding: "6px 8px",
+  borderBottom: "1px solid #e5e7eb",
+  background: "#f9fafb",
+};
+
+const tdStyle = {
+  padding: "6px 8px",
+  borderBottom: "1px solid #f3f4f6",
+};

@@ -1,40 +1,36 @@
-import { createContext, useContext, useState } from "react";
-
-// DEV: defina aqui o usuário "logado" (troque conforme for testando)
-const initialUser = { id: 3, perfil: "ALUNO", email: "aluno@cadete.com" };
-// Ex.: professor -> { id: 2, perfil: "PROFESSOR", email: "prof@cadete.com" }
-// Ex.: admin     -> { id: 1, perfil: "ADMIN", email: "admin@cadete.com" }
+// src/context/AuthContext.jsx
+import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-    const [user, setUser] = useState(initialUser);
-    return (
-        <AuthContext.Provider value={{ user, setUser }}>
-            {/* Dev Switcher (opcional) */}
-            <div style={{ padding: 8, background: "#f7f7f7", borderBottom: "1px solid #eee" }}>
-                <strong>Usuário atual:</strong> {user.email} — {user.perfil}{" "}
-                <select
-                    value={user.perfil}
-                    onChange={(e) => setUser((u) => ({ ...u, perfil: e.target.value }))}
-                    style={{ marginLeft: 8 }}
-                >
-                    <option>ALUNO</option>
-                    <option>PROFESSOR</option>
-                    <option>ADMIN</option>
-                </select>
-                <input
-                    style={{ marginLeft: 8, width: 80 }}
-                    type="number"
-                    min={1}
-                    value={user.id}
-                    onChange={(e) => setUser((u) => ({ ...u, id: Number(e.target.value) }))}
-                    title="user id"
-                />
-            </div>
-            {children}
-        </AuthContext.Provider>
-    );
+    const [user, setUser] = useState(null);
+
+    // Carrega do localStorage ao iniciar
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem("usuarioLogado");
+            if (raw) {
+                setUser(JSON.parse(raw));
+            }
+        } catch {
+            // se der erro, ignora e mantém user = null
+        }
+    }, []);
+
+    function login(dadosUsuario) {
+        setUser(dadosUsuario);
+        localStorage.setItem("usuarioLogado", JSON.stringify(dadosUsuario));
+    }
+
+    function logout() {
+        setUser(null);
+        localStorage.removeItem("usuarioLogado");
+    }
+
+    const value = { user, setUser, login, logout };
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

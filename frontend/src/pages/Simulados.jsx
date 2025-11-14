@@ -100,8 +100,7 @@ export default function Simulados() {
             alert("Apenas professores e admins podem excluir simulados.");
             return;
         }
-        if (!window.confirm("Tem certeza que deseja excluir este simulado?"))
-            return;
+        if (!window.confirm("Tem certeza que deseja excluir este simulado?")) return;
 
         try {
             const resp = await fetch(`http://localhost:8080/api/simulados/${id}`, {
@@ -253,55 +252,70 @@ export default function Simulados() {
 
     return (
         <Layout title="Simulados">
-            <div className="simulados-admin-container">
-                <div className="simulados-admin-left">
-                    <h2>Simulados cadastrados</h2>
-
-                    {err && (
-                        <p style={{ color: "crimson", marginTop: 4 }}>
-                            {err.message || "Erro ao carregar / salvar dados."}
+            <div className="page-root">
+                {/* HERO */}
+                <section className="page-hero page-hero--simulados">
+                    <div className="page-hero-main">
+                        <h2>Simulados</h2>
+                        <p>
+                            Monte simulados com várias questões, deixe o aluno responder tudo
+                            e veja o desempenho final.
                         </p>
-                    )}
+                    </div>
+                    <div className="page-hero-badge">🎯 Avaliação completa</div>
+                </section>
 
-                    {loadingLista ? (
-                        <p>Carregando simulados...</p>
-                    ) : lista.length === 0 ? (
-                        <p>Nenhum simulado cadastrado.</p>
-                    ) : (
-                        <div className="simulados-list">
-                            {lista.map((s) => (
-                                <div key={s.id} className="simulado-card">
-                                    <div className="simulado-card-main">
-                                        <h3>{s.titulo || `Simulado #${s.id}`}</h3>
-                                        <p>{s.descricao || "Simulado para treino."}</p>
-                                        <p className="simulado-meta">ID: {s.id}</p>
-                                    </div>
-                                    <div className="simulado-card-actions">
-                                        <button
-                                            type="button"
-                                            onClick={() => abrirSimuladoComoAluno(s.id)}
-                                        >
-                                            Fazer como aluno
-                                        </button>
-                                        {isGestor && (
+                {/* COLUNAS: LISTA + CRIAÇÃO */}
+                <div className="page-columns">
+                    {/* Lista de simulados */}
+                    <div className="card section-card">
+                        <h3 style={{ marginTop: 0 }}>Simulados cadastrados</h3>
+
+                        {err && (
+                            <p style={{ color: "crimson", marginTop: 4 }}>
+                                {err.message || "Erro ao carregar / salvar dados."}
+                            </p>
+                        )}
+
+                        {loadingLista ? (
+                            <p>Carregando simulados...</p>
+                        ) : lista.length === 0 ? (
+                            <p>Nenhum simulado cadastrado.</p>
+                        ) : (
+                            <div className="simulados-list">
+                                {lista.map((s) => (
+                                    <div key={s.id} className="simulado-card">
+                                        <div className="simulado-card-main">
+                                            <h3>{s.titulo || `Simulado #${s.id}`}</h3>
+                                            <p>{s.descricao || "Simulado para treino."}</p>
+                                            <p className="simulado-meta">ID: {s.id}</p>
+                                        </div>
+                                        <div className="simulado-card-actions">
                                             <button
                                                 type="button"
-                                                className="simulado-delete"
-                                                onClick={() => handleDeletar(s.id)}
+                                                onClick={() => abrirSimuladoComoAluno(s.id)}
                                             >
-                                                Excluir
+                                                Fazer como aluno
                                             </button>
-                                        )}
+                                            {isGestor && (
+                                                <button
+                                                    type="button"
+                                                    className="simulado-delete"
+                                                    onClick={() => handleDeletar(s.id)}
+                                                >
+                                                    Excluir
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
-                <div className="simulados-admin-right">
-                    <div className="simulados-form-card">
-                        <h2>Criar novo simulado</h2>
+                    {/* Criação */}
+                    <div className="card section-card">
+                        <h3 style={{ marginTop: 0 }}>Criar novo simulado</h3>
                         {isGestor ? (
                             <form className="simulados-form" onSubmit={handleCriar}>
                                 <div className="form-group">
@@ -339,121 +353,123 @@ export default function Simulados() {
                         )}
                     </div>
                 </div>
-            </div>
 
-            {simuladoAtivo && (
-                <div className="simulado-ativo">
-                    <div className="simulado-ativo-header">
-                        <div>
-                            <h2>{simuladoAtivo.titulo || `Simulado #${simuladoAtivo.id}`}</h2>
-                            <p className="simulado-ativo-desc">
-                                {simuladoAtivo.descricao ||
-                                    "Responda todas as questões e clique em 'Entregar simulado'."}
-                            </p>
+                {/* ÁREA DE RESOLUÇÃO */}
+                {simuladoAtivo && (
+                    <div className="card section-card simulado-ativo">
+                        <div className="simulado-ativo-header">
+                            <div>
+                                <h2>
+                                    {simuladoAtivo.titulo || `Simulado #${simuladoAtivo.id}`}
+                                </h2>
+                                <p className="simulado-ativo-desc">
+                                    {simuladoAtivo.descricao ||
+                                        "Responda todas as questões e clique em 'Entregar simulado'."}
+                                </p>
+                            </div>
+                            <button type="button" onClick={limparSimuladoAtivo}>
+                                Fechar
+                            </button>
                         </div>
-                        <button type="button" onClick={limparSimuladoAtivo}>
-                            Fechar
-                        </button>
-                    </div>
 
-                    {loadingSimulado ? (
-                        <p>Carregando simulado...</p>
-                    ) : !simuladoAtivo.questoes ||
-                    simuladoAtivo.questoes.length === 0 ? (
-                        <p>Este simulado não tem questões cadastradas.</p>
-                    ) : (
-                        <>
-                            {resultado && (
-                                <div className="simulado-resultado">
-                                    <p>
-                                        Você acertou{" "}
-                                        <strong>
-                                            {resultado.acertos} de {resultado.total}
-                                        </strong>{" "}
-                                        questões.
-                                    </p>
-                                </div>
-                            )}
+                        {loadingSimulado ? (
+                            <p>Carregando simulado...</p>
+                        ) : !simuladoAtivo.questoes ||
+                        simuladoAtivo.questoes.length === 0 ? (
+                            <p>Este simulado não tem questões cadastradas.</p>
+                        ) : (
+                            <>
+                                {resultado && (
+                                    <div className="simulado-resultado">
+                                        <p>
+                                            Você acertou{" "}
+                                            <strong>
+                                                {resultado.acertos} de {resultado.total}
+                                            </strong>{" "}
+                                            questões.
+                                        </p>
+                                    </div>
+                                )}
 
-                            <div className="simulado-questoes-lista">
-                                {simuladoAtivo.questoes.map((q, idx) => {
-                                    const gItem =
-                                        resultado?.gabarito?.find(
-                                            (g) => g.questaoId === q.id
-                                        ) || null;
-                                    const marcada =
-                                        gItem?.marcada || respostas[q.id] || null;
+                                <div className="simulado-questoes-lista">
+                                    {simuladoAtivo.questoes.map((q, idx) => {
+                                        const gItem =
+                                            resultado?.gabarito?.find(
+                                                (g) => g.questaoId === q.id
+                                            ) || null;
+                                        const marcada = gItem?.marcada || respostas[q.id] || null;
 
-                                    return (
-                                        <div key={q.id} className="simulado-questao-box">
-                                            <div className="simulado-questao-header">
-                        <span className="simulado-questao-numero">
-                          Questão {idx + 1}
-                        </span>
-                                                <span className="simulado-questao-meta">
-                          {q.materia} • {q.nivel}
-                        </span>
-                                            </div>
-                                            <p className="simulado-questao-enunciado">
-                                                {q.enunciado}
-                                            </p>
+                                        return (
+                                            <div key={q.id} className="simulado-questao-box">
+                                                <div className="simulado-questao-header">
+                          <span className="simulado-questao-numero">
+                            Questão {idx + 1}
+                          </span>
+                                                    <span className="simulado-questao-meta">
+                            {q.materia} • {q.nivel}
+                          </span>
+                                                </div>
+                                                <p className="simulado-questao-enunciado">
+                                                    {q.enunciado}
+                                                </p>
 
-                                            <div className="alternativas-lista">
-                                                {ALTERNATIVAS.map(({ letra, campo }) => {
-                                                    const texto = q[campo];
-                                                    if (!texto) return null;
+                                                <div className="alternativas-lista">
+                                                    {ALTERNATIVAS.map(({ letra, campo }) => {
+                                                        const texto = q[campo];
+                                                        if (!texto) return null;
 
-                                                    let className = "alternativa-item";
-                                                    if (entregue && gItem) {
-                                                        if (letra === gItem.correta) {
-                                                            className += " alternativa-correta";
-                                                        } else if (letra === gItem.marcada) {
-                                                            className += " alternativa-errada";
-                                                        }
-                                                    }
-
-                                                    return (
-                                                        <label
-                                                            key={letra}
-                                                            className={className}
-                                                            onClick={() =>
-                                                                selecionarAlternativa(q.id, letra)
+                                                        let className = "alternativa-item";
+                                                        if (entregue && gItem) {
+                                                            if (letra === gItem.correta) {
+                                                                className += " alternativa-correta";
+                                                            } else if (letra === gItem.marcada) {
+                                                                className += " alternativa-errada";
                                                             }
-                                                        >
-                                                            <input
-                                                                type="radio"
-                                                                name={`sim-q-${q.id}`}
-                                                                checked={marcada === letra}
-                                                                readOnly
-                                                            />
-                                                            <span className="alternativa-letra">
-                                {letra})
-                              </span>
-                                                            <span className="alternativa-texto">
-                                {texto}
-                              </span>
-                                                        </label>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                                        }
 
-                            <div className="simulado-footer">
-                                <button
-                                    type="button"
-                                    onClick={entregarSimulado}
-                                    disabled={entregue}
-                                >
-                                    {entregue ? "Simulado entregue" : "Entregar simulado"}
-                                </button>
-                            </div>
-                        </>
-                    )}
-                </div>
-            )}
+                                                        return (
+                                                            <label
+                                                                key={letra}
+                                                                className={className}
+                                                                onClick={() =>
+                                                                    selecionarAlternativa(q.id, letra)
+                                                                }
+                                                            >
+                                                                <input
+                                                                    type="radio"
+                                                                    name={`sim-q-${q.id}`}
+                                                                    checked={marcada === letra}
+                                                                    readOnly
+                                                                />
+                                                                <span className="alternativa-letra">
+                                  {letra})
+                                </span>
+                                                                <span className="alternativa-texto">
+                                  {texto}
+                                </span>
+                                                            </label>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                <div className="simulado-footer">
+                                    <button
+                                        type="button"
+                                        onClick={entregarSimulado}
+                                        disabled={entregue}
+                                    >
+                                        {entregue ? "Simulado entregue" : "Entregar simulado"}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
         </Layout>
     );
 }

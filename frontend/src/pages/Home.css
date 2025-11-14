@@ -1,99 +1,228 @@
-/* src/pages/Home.css */
-
-.home-page {
-    min-height: calc(100vh - 0px);
-    display: flex;
-    justify-content: center;
-    align-items: stretch;
-    padding: 32px;
-    background: radial-gradient(circle at top left, #2563eb 0, #0f172a 60%);
+/* animação de entrada geral */
+@keyframes home-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-.home-content {
-    max-width: 1100px;
-    width: 100%;
-    background: #f9fafb;
-    border-radius: 24px;
-    padding: 24px 28px 32px;
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.45);
+/* animação de entrada dos cards */
+@keyframes home-card-pop {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* container da página */
+.home-page {
+    min-height: calc(100vh - 130px); /* ocupa praticamente a tela toda */
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
+    animation: home-fade-in 0.3s ease-out;
 }
 
-.home-hero h1 {
-    font-size: 2.4rem;
-    margin-bottom: 0.5rem;
-    color: #111827;
+/* fundo de toda a área da home (atrás do hero + cards) */
+.app-main {
+    background: radial-gradient(circle at top left, #e0edff, #f3f4f6 55%, #e5e7eb);
 }
 
-.home-hero p {
-    margin: 0.2rem 0;
-    color: #4b5563;
+/* HERO PRINCIPAL – azul com texto branco */
+.home-hero-card {
+    border-radius: 18px;
+    padding: 1.9rem 2rem;
+    background: radial-gradient(circle at top left, #2563eb, #1d4ed8 60%, #111827);
+    color: #f9fafb;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    box-shadow: 0 18px 30px rgba(15, 23, 42, 0.35);
 }
 
-.home-hero p strong {
-    color: #111827;
+.home-hero-text h1 {
+    margin: 0 0 0.55rem 0;
+    font-size: 1.9rem;
 }
 
+.home-hero-text p {
+    margin: 0;
+    font-size: 0.96rem;
+    max-width: 30rem;
+    opacity: 0.96;
+}
+
+.home-hero-badge span {
+    display: inline-block;
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.75);
+    font-size: 0.8rem;
+}
+
+/* GRID DE CARDS */
 .home-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px;
 }
 
+/* CARD BASE */
 .home-card {
+    min-height: 190px;
+    padding: 1.7rem 1.6rem;
+    border-radius: 18px;
+    background: #ffffff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 16px 18px;
-    border-radius: 18px;
-    background: #ffffff;
-    box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
-    text-decoration: none;
-    color: inherit;
-    transition: transform 0.12s ease, box-shadow 0.12s ease,
-    background 0.12s ease;
+    cursor: pointer;
+
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease,
+    border-color 0.18s ease;
+    animation: home-card-pop 0.25s ease-out forwards;
 }
 
-.home-card h2 {
-    margin: 0 0 0.3rem;
-    font-size: 1.1rem;
+.home-card-icon {
+    font-size: 1.6rem;
+    margin-bottom: 0.2rem;
+}
+
+.home-card-title {
+    margin: 0.1rem 0 0.4rem 0;
+    font-size: 1.05rem;
+    font-weight: 600;
     color: #111827;
 }
 
-.home-card p {
-    margin: 0 0 0.7rem;
+.home-card-desc {
+    margin: 0;
     font-size: 0.9rem;
-    color: #6b7280;
+    color: #4b5563;
 }
 
-.home-card-link {
+/* rodapé do card */
+.home-card-footer {
+    margin-top: 1.1rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.home-card-footer button {
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    border: none;
     font-size: 0.85rem;
-    font-weight: 500;
-    color: #2563eb;
+    font-weight: 600;
+    color: #ffffff;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 }
 
+.home-card-footer button:hover {
+    transform: translateY(-1px) scale(1.05);
+    box-shadow: 0 10px 18px rgba(37, 99, 235, 0.45);
+    filter: brightness(1.05);
+}
+
+/* HOVER: "pular" e mudar cor de fundo/sombra */
 .home-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.25);
-    background: #eef2ff;
+    transform: translateY(-6px);
+    box-shadow: 0 16px 26px rgba(37, 99, 235, 0.25);
 }
 
-/* responsivo */
+/* VARIAÇÕES DE COR POR CARD */
+.home-card--questoes {
+    border-left: 4px solid #2563eb;
+}
 
-@media (max-width: 900px) {
-    .home-page {
-        padding: 16px;
-    }
+.home-card--questoes:hover {
+    background: #eef3ff;
+}
 
-    .home-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+.home-card--simulados {
+    border-left: 4px solid #7c3aed;
+}
+
+.home-card--simulados:hover {
+    background: #f3e9ff;
+}
+
+.home-card--redacoes {
+    border-left: 4px solid #ec4899;
+}
+
+.home-card--redacoes:hover {
+    background: #ffe6f4;
+}
+
+.home-card--usuarios {
+    border-left: 4px solid #0ea5e9;
+}
+
+.home-card--usuarios:hover {
+    background: #e6f7ff;
+}
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+    .home-hero-card {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 
-@media (max-width: 600px) {
-    .home-grid {
-        grid-template-columns: 1fr;
+/* DARK MODE AUTOMÁTICO */
+@media (prefers-color-scheme: dark) {
+    .app-main {
+        background: radial-gradient(circle at top left, #020617, #020617 55%, #020617);
+    }
+
+    .home-hero-card {
+        box-shadow: 0 18px 34px rgba(0, 0, 0, 0.8);
+    }
+
+    .home-card {
+        background: #020617;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+    }
+
+    .home-card-title {
+        color: #e5e7eb;
+    }
+
+    .home-card-desc {
+        color: #9ca3af;
+    }
+
+    .home-card-footer button {
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.7);
+    }
+
+    .home-card--questoes:hover {
+        background: #0b1220;
+    }
+
+    .home-card--simulados:hover {
+        background: #12091f;
+    }
+
+    .home-card--redacoes:hover {
+        background: #1a0715;
+    }
+
+    .home-card--usuarios:hover {
+        background: #041721;
     }
 }

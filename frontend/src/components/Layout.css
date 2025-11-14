@@ -1,0 +1,232 @@
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+}
+
+/* fundo geral */
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+    background: #0b1020;
+}
+
+/* casca principal */
+.app-shell {
+    min-height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    background: #f3f4f6;
+}
+
+/* HEADER */
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 2.5rem;
+    background: #111827;
+    color: #f9fafb;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.6);
+}
+
+.app-header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+}
+
+.app-logo {
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: 0.03em;
+}
+
+.app-title {
+    font-size: 0.95rem;
+    opacity: 0.8;
+}
+
+.app-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.app-user-email {
+    opacity: 0.8;
+}
+
+.app-user-role {
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: #1f2937;
+    font-size: 0.75rem;
+    text-transform: lowercase;
+}
+
+.app-logout {
+    border: none;
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    background: #f97316;
+    color: #111827;
+    font-weight: 600;
+    transition: filter 0.12s ease, transform 0.08s ease;
+}
+
+.app-logout:hover {
+    filter: brightness(1.05);
+}
+
+.app-logout:active {
+    transform: translateY(1px);
+}
+
+/* NAV */
+
+.app-nav {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.7rem 2.5rem;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.app-nav-link {
+    font-size: 0.9rem;
+    text-decoration: none;
+    color: #4b5563;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid transparent;
+    transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.app-nav-link:hover {
+    color: #111827;
+}
+
+.app-nav-link-active {
+    color: #111827;
+    border-color: #2563eb;
+    font-weight: 600;
+}
+
+/* CONTEÚDO */
+
+.app-main {
+    flex: 1;
+    padding: 1.5rem 2.5rem 2.5rem;
+}
+
+.app-main-inner {
+    width: 100%;
+}
+
+/* card genérico */
+
+.card {
+    background: #ffffff;
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+/* grid básica */
+
+.grid.grid-2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.3fr);
+    gap: 1rem;
+}
+
+/* inputs e botões */
+
+.input {
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border-radius: 0.6rem;
+    border: 1px solid #d1d5db;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.1s ease, box-shadow 0.1s ease;
+}
+
+.input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+
+button {
+    cursor: pointer;
+}
+
+/* ===== PÁGINAS INTERNAS PADRÃO (Questões / Simulados / Redações) ===== */
+
+.page-root {
+    min-height: calc(100vh - 130px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* hero da página (tipo mini-hero da Home) */
+.page-hero {
+    border-radius: 18px;
+    padding: 1.4rem 1.6rem;
+    color: #f9fafb;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 10px;
+    box-shadow: 0 12px 20px rgba(15, 23, 42, 0.28);
+}
+
+.page-hero-main h2 {
+    margin: 0 0 0.35rem 0;
+    font-size: 1.4rem;
+}
+
+.page-hero-main p {
+    margin: 0;
+    font-size: 0.9rem;
+    opacity: 0.95;
+}
+
+.page-hero-badge {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.7);
+}
+
+/* variações de cor por página */
+.page-hero--questoes {
+    background: radial-gradient(circle at top left, #2563eb, #1d4ed8 60%, #111827);
+}
+
+.page-hero--simulados {
+    background: radial-gradient(circle at top left, #7c3aed, #4c1d95 60%, #111827);
+}
+
+.page-hero--redacoes {
+    background: radial-gradient(circle at top left, #ec4899, #be185d 60%, #111827);
+}
+
+/* grid de colunas para filtros + formulários */
+.page-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.3fr);
+    gap: 1rem;
+}
+
+/* card de seção */
+.section-card {
+    border-radius: 1rem;
+}
