@@ -1,6 +1,7 @@
 // src/main/java/com/example/backend/model/Tentativa.java
 package com.example.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -26,6 +27,7 @@ public class Tentativa {
 
     // aluno que está fazendo o simulado
     @ManyToOne(optional = false)
+    @JsonIgnore
     @JoinColumn(name = "aluno_id")
     private Usuario aluno;
 

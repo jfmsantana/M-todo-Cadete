@@ -1,31 +1,73 @@
 // src/pages/FazerSimulado.jsx
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { SimuladosAPI, TentativasAPI } from "../api/simulados";
+import { useParams, useNavigate } from "react-router-dom";
 import Loader from "../components/Loader";
 import ErrorMsg from "../components/ErrorMsg";
+import Layout from "../components/Layout";
+
+const ALTERNATIVAS = ["A", "B", "C", "D"];
+const API_BASE = "http://localhost:8080/api";
+
+const RESULT_KEY_PREFIX = "simuladosResultados_";
+
+function getUsuarioLogado() {
+    try {
+        const raw = localStorage.getItem("usuarioLogado");
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
+function salvarResultadoLocal(userId, simuladoId, acertos, total) {
+    if (!userId) return;
+    const key = RESULT_KEY_PREFIX + userId;
+    let data = {};
+    try {
+        const raw = localStorage.getItem(key);
+        if (raw) data = JSON.parse(raw);
+    } catch {
+        data = {};
+    }
+    data[simuladoId] = { acertos, total };
+    localStorage.setItem(key, JSON.stringify(data));
+}
 
 export default function FazerSimulado() {
     const { id } = useParams(); // ID do simulado
+    const navigate = useNavigate();
+
+    const [user, setUser] = useState(null);
     const [simulado, setSimulado] = useState(null);
-    const [tentativa, setTentativa] = useState(null);
+    const [tentativaId, setTentativaId] = useState(null);
     const [respostas, setRespostas] = useState({});
     const [resultado, setResultado] = useState(null);
+
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState(null);
 
-    // TEMP: aluno logado (até termos login real)
-    const alunoId = 3; // ajuste aqui se precisar
+    useEffect(() => {
+        const u = getUsuarioLogado();
+        setUser(u || null);
+    }, []);
 
+    // Carregar simulado
     useEffect(() => {
         async function carregar() {
             try {
                 setLoading(true);
                 setErr(null);
-                const s = await SimuladosAPI.buscar(id);
-                setSimulado(s);
+                const resp = await fetch(`${API_BASE}/simulados/${id}`);
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    console.error("Erro ao buscar simulado:", resp.status, text);
+                    throw new Error("Erro ao buscar simulado");
+                }
+                const data = await resp.json();
+                setSimulado(data);
             } catch (e) {
-                setErr(e.response?.data || e.message);
+                console.error(e);
+                setErr(e);
             } finally {
                 setLoading(false);
             }
@@ -34,119 +76,310 @@ export default function FazerSimulado() {
     }, [id]);
 
     async function iniciarSimulado() {
+        if (!user) {
+            alert("Faça login para iniciar o simulado.");
+            return;
+        }
+
         try {
+            setLoading(true);
             setErr(null);
-            const t = await TentativasAPI.iniciar(simulado.id, alunoId);
-            setTentativa(t);
+            setResultado(null);
+            setRespostas({});
+            setTentativaId(null);
+
+            const resp = await fetch(
+                `${API_BASE}/simulados/${simulado.id}/iniciar`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ alunoId: user.id }),
+                }
+            );
+
+            if (!resp.ok) {
+                const text = await resp.text();
+                console.error("Erro ao iniciar tentativa:", resp.status, text);
+                throw new Error("Erro ao iniciar tentativa");
+            }
+
+            const data = await resp.json(); // { tentativaId }
+            setTentativaId(data.tentativaId);
         } catch (e) {
-            setErr(e.response?.data || e.message);
+            console.error(e);
+            setErr(e);
+        } finally {
+            setLoading(false);
         }
     }
 
     function marcarResposta(questaoId, letra) {
-        setRespostas(r => ({ ...r, [questaoId]: letra }));
+        if (resultado) return; // depois de entregar, não mexe
+        setRespostas((prev) => ({ ...prev, [questaoId]: letra }));
     }
 
-    async function entregar() {
+    async function entregarSimulado(e) {
+        e.preventDefault();
+
+        if (!tentativaId) {
+            alert("Primeiro clique em 'Iniciar simulado'.");
+            return;
+        }
+
+        if (!simulado || !simulado.questoes || simulado.questoes.length === 0) {
+            alert("Simulado sem questões.");
+            return;
+        }
+
+        const itens = simulado.questoes.map((q) => ({
+            questaoId: q.id,
+            marcada: respostas[q.id] || " ",
+        }));
+
         try {
+            setLoading(true);
             setErr(null);
 
-            // garante uma tentativa
-            let tid = tentativa?.id;
-            if (!tid) {
-                const t = await TentativasAPI.iniciar(simulado.id, alunoId);
-                setTentativa(t);
-                tid = t.id;
+            // 1) envia respostas
+            const resp1 = await fetch(
+                `${API_BASE}/tentativas/${tentativaId}/responder`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ itens }),
+                }
+            );
+            if (!resp1.ok) {
+                const text = await resp1.text();
+                console.error("Erro ao enviar respostas:", resp1.status, text);
+                throw new Error("Erro ao enviar respostas");
             }
 
-            // payload certo: { respostas: [ { questaoId, marcada } ] }
-            const payload = Object.entries(respostas).map(([questaoId, letra]) => ({
-                questaoId: Number(questaoId),
-                marcada: letra,
-            }));
+            // 2) entrega e pega o resultado
+            const resp2 = await fetch(
+                `${API_BASE}/tentativas/${tentativaId}/entregar`,
+                { method: "POST" }
+            );
+            if (!resp2.ok) {
+                const text = await resp2.text();
+                console.error("Erro ao entregar simulado:", resp2.status, text);
+                throw new Error("Erro ao entregar simulado");
+            }
 
-            // envia respostas (não entrega ainda)
-            await TentativasAPI.responder(tid, payload);
+            const res = await resp2.json(); // TentativaDTOs.Resultado
+            setResultado(res);
 
-            // agora entrega
-            const resultadoFinal = await TentativasAPI.entregar(tid);
-            setResultado(resultadoFinal);
+            // salva no localStorage para aparecer na lista de simulados
+            salvarResultadoLocal(
+                user?.id,
+                simulado.id,
+                res.acertos,
+                res.total
+            );
         } catch (e) {
+            console.error(e);
             setErr(e);
+        } finally {
+            setLoading(false);
         }
     }
 
-    if (loading) return <Loader />;
-    if (err) return <ErrorMsg error={err} />;
-    if (!simulado) return <p>Simulado não encontrado.</p>;
-
-    // Após a entrega: mostrar nota e gabarito
-    if (resultado) {
-        const nota = `${resultado.acertos}/${resultado.total}`;
+    // estados de carregamento/erro antes de ter simulado
+    if (loading && !simulado) {
         return (
-            <div style={{ padding: 20 }}>
-                <h2>Resultado — {simulado.titulo}</h2>
-                <p><strong>Nota:</strong> {nota}</p>
-
-                <h3>Gabarito</h3>
-                <ul>
-                    {resultado.gabarito?.map((g) => (
-                        <li key={g.questaoId}>
-                            #{g.questaoId} — sua: {g.marcada || "-"} | correta:{" "}
-                            <span style={{ color: g.acertou ? "green" : "crimson" }}>
-                {g.correta}
-              </span>
-                            {g.acertou ? " ✅" : " ❌"}
-                        </li>
-                    ))}
-                </ul>
-            </div>
+            <Layout title="Fazer simulado">
+                <div className="page-shell">
+                    <div className="card card-elevated">
+                        <Loader />
+                    </div>
+                </div>
+            </Layout>
         );
     }
 
-    // Antes de iniciar
-    if (!tentativa) {
+    if (err && !simulado) {
         return (
-            <div style={{ padding: 20 }}>
-                <h2>{simulado.titulo}</h2>
-                <p>{simulado.questoes?.length || 0} questões.</p>
-                <button onClick={iniciarSimulado}>Iniciar simulado</button>
-            </div>
+            <Layout title="Fazer simulado">
+                <div className="page-shell">
+                    <div className="card card-elevated">
+                        <ErrorMsg error={err} />
+                    </div>
+                </div>
+            </Layout>
         );
     }
 
-    // Durante o simulado
+    if (!simulado) {
+        return (
+            <Layout title="Fazer simulado">
+                <div className="page-shell">
+                    <div className="card card-elevated">
+                        <p>Simulado não encontrado.</p>
+                    </div>
+                </div>
+            </Layout>
+        );
+    }
+
+    const totalQuestoes = simulado.questoes?.length || 0;
+
+    // Layout principal
     return (
-        <div style={{ padding: 20 }}>
-            <h2>Respondendo: {simulado.titulo}</h2>
-            <form
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    entregar();
-                }}
-            >
-                <ol>
-                    {simulado.questoes?.map((q) => (
-                        <li key={q.id} style={{ marginBottom: 16 }}>
-                            <p><strong>{q.enunciado}</strong></p>
-                            {["A", "B", "C", "D"].map((letra) => (
-                                <label key={letra} style={{ display: "block" }}>
-                                    <input
-                                        type="radio"
-                                        name={`q${q.id}`}
-                                        value={letra}
-                                        checked={respostas[q.id] === letra}
-                                        onChange={() => marcarResposta(q.id, letra)}
-                                    />{" "}
-                                    {letra}) {q[`alternativa${letra}`]}
-                                </label>
-                            ))}
-                        </li>
-                    ))}
-                </ol>
+        <Layout title={`Simulado: ${simulado.titulo || ""}`}>
+            <div className="page-shell">
+                <div className="page-header-row">
+                    <div>
+                        <h2 className="page-title">{simulado.titulo}</h2>
+                        <p className="page-subtitle">
+                            Responda todas as questões e clique em <strong>Entregar simulado</strong> para ver seu desempenho.
+                        </p>
+                    </div>
+                </div>
 
-                <button type="submit">Entregar simulado</button>
-            </form>
-        </div>
+                <div className="card card-elevated">
+                    {/* Resultado depois de entregue */}
+                    {resultado && (
+                        <div
+                            className="card card-elevated"
+                            style={{ marginBottom: 16, background: "#f6fff6" }}
+                        >
+                            <h3>Resultado do simulado</h3>
+                            <p>
+                                Você acertou{" "}
+                                <strong>
+                                    {resultado.acertos} / {resultado.total}
+                                </strong>{" "}
+                                (
+                                {resultado.total
+                                    ? ((resultado.acertos / resultado.total) * 100).toFixed(1)
+                                    : 0}
+                                %)
+                            </p>
+
+                            <div
+                                style={{
+                                    marginTop: 12,
+                                    display: "flex",
+                                    gap: 8,
+                                    flexWrap: "wrap",
+                                }}
+                            >
+                                <button
+                                    type="button"
+                                    className="btn-primary"
+                                    onClick={() => navigate("/home")}
+                                >
+                                    Voltar para a Home
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-ghost"
+                                    onClick={() => navigate("/simulados")}
+                                >
+                                    Ver lista de simulados
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {err && (
+                        <div style={{ marginBottom: 8 }}>
+                            <ErrorMsg error={err} />
+                        </div>
+                    )}
+
+                    {/* Antes de iniciar */}
+                    {!tentativaId && !resultado && (
+                        <div>
+                            <p>
+                                Este simulado possui{" "}
+                                <strong>{simulado.questoes?.length || 0}</strong> questão(ões).
+                            </p>
+                            <button
+                                type="button"
+                                className="btn-primary"
+                                onClick={iniciarSimulado}
+                                disabled={loading}
+                            >
+                                {loading ? "Iniciando..." : "Iniciar simulado"}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Após iniciar: formulário de respostas */}
+                    {tentativaId && (
+                        <form
+                            onSubmit={entregarSimulado}
+                            className="simulado-form"
+                            style={{ marginTop: 16 }}
+                        >
+                            <ol>
+                                {simulado.questoes.map((q) => (
+                                    <li key={q.id} style={{ marginBottom: 16 }}>
+                                        <p className="simulado-questao-enunciado">
+                                            <strong>
+                                                #{q.id}) {q.enunciado}
+                                            </strong>
+                                        </p>
+
+                                        {ALTERNATIVAS.map((letra) => {
+                                            const texto = q[`alternativa${letra}`];
+                                            if (!texto) return null;
+
+                                            const marcada = respostas[q.id];
+
+                                            return (
+                                                <label
+                                                    key={letra}
+                                                    className="alternativa-item"
+                                                    style={{ display: "block", marginBottom: 4 }}
+                                                >
+                                                    <input
+                                                        type="radio"
+                                                        name={`q-${q.id}`}
+                                                        value={letra}
+                                                        checked={marcada === letra}
+                                                        onChange={() => marcarResposta(q.id, letra)}
+                                                        disabled={!!resultado}
+                                                    />{" "}
+                                                    <span className="alternativa-letra">{letra})</span>{" "}
+                                                    <span className="alternativa-texto">{texto}</span>
+                                                </label>
+                                            );
+                                        })}
+                                    </li>
+                                ))}
+                            </ol>
+
+                            <div className="card-actions-right" style={{ marginTop: 12 }}>
+                                <button
+                                    type="submit"
+                                    className="btn-primary"
+                                    disabled={!!resultado || loading}
+                                >
+                                    {resultado ? "Simulado já entregue" : "Entregar simulado"}
+                                </button>
+                            </div>
+
+                            <p
+                                style={{
+                                    marginTop: 8,
+                                    fontSize: 12,
+                                    color: "#666",
+                                }}
+                            >
+                                Questões respondidas:{" "}
+                                {
+                                    Object.values(respostas).filter(
+                                        (v) => v && v.trim().length > 0
+                                    ).length
+                                }{" "}
+                                / {totalQuestoes}
+                            </p>
+                        </form>
+                    )}
+                </div>
+            </div>
+        </Layout>
     );
 }

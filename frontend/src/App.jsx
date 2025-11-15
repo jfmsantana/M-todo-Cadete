@@ -6,6 +6,8 @@ import Usuarios from "./pages/Usuarios";
 import Questoes from "./pages/Questoes";
 import Simulados from "./pages/Simulados";
 import Redacoes from "./pages/Redacoes";
+import FazerSimulado from "./pages/FazerSimulado.jsx";
+
 
 export default function App() {
     return (
@@ -21,6 +23,7 @@ export default function App() {
                 <Route path="/questoes" element={<Questoes />} />
                 <Route path="/simulados" element={<Simulados />} />
                 <Route path="/redacoes" element={<Redacoes />} />
+                <Route path="/simulados/:id" element={<FazerSimulado />} />
 
                 {/* Qualquer rota desconhecida manda pro login */}
                 <Route path="*" element={<Navigate to="/" replace />} />

@@ -13,6 +13,11 @@ public class TentativaDTOs {
     }
 
     @Data
+    public static class IniciarResponse {
+        private Long tentativaId;
+    }
+
+    @Data
     public static class Item {
         private Long questaoId;
         private String marcada;

@@ -16,19 +16,23 @@ public class TentativaController {
     private final TentativaService tentativaService;
 
     @PostMapping("/simulados/{simuladoId}/iniciar")
-    public Tentativa iniciar(
+    public TentativaDTOs.IniciarResponse iniciar(
             @PathVariable Long simuladoId,
             @RequestBody TentativaDTOs.IniciarRequest body
     ) {
-        return tentativaService.iniciar(simuladoId, body.getAlunoId());
+        Tentativa tentativa = tentativaService.iniciar(simuladoId, body.getAlunoId());
+
+        TentativaDTOs.IniciarResponse res = new TentativaDTOs.IniciarResponse();
+        res.setTentativaId(tentativa.getId());
+        return res;
     }
 
     @PostMapping("/tentativas/{tentativaId}/responder")
-    public Tentativa responder(
+    public void responder(
             @PathVariable Long tentativaId,
             @RequestBody TentativaDTOs.ResponderRequest body
     ) {
-        return tentativaService.responder(tentativaId, body.getItens());
+        tentativaService.responder(tentativaId, body.getItens());
     }
 
     @PostMapping("/tentativas/{tentativaId}/entregar")

@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import Layout from "../components/Layout";
 import "./Simulados.css";
 
+const API_BASE = "http://localhost:8080/api";
+const RESULT_KEY_PREFIX = "simuladosResultados_";
+
 function getUsuarioLogado() {
     try {
         const raw = localStorage.getItem("usuarioLogado");
@@ -12,310 +15,245 @@ function getUsuarioLogado() {
     }
 }
 
+function carregarResultados(userId) {
+    if (!userId) return {};
+    const key = RESULT_KEY_PREFIX + userId;
+    try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+}
+
 export default function Simulados() {
     const [user, setUser] = useState(null);
+    const [lista, setLista] = useState([]);
+    const [loadingLista, setLoadingLista] = useState(false);
+    const [err, setErr] = useState(null);
 
-    const [simulados, setSimulados] = useState([]);
-    const [loadingSimulados, setLoadingSimulados] = useState(false);
-    const [errSimulados, setErrSimulados] = useState(null);
+    const [form, setForm] = useState({ titulo: "", descricao: "" });
 
-    // criação de simulado com questões
-    const [mostrarCriacao, setMostrarCriacao] = useState(false);
-    const [tituloSimulado, setTituloSimulado] = useState("");
-    const [questoes, setQuestoes] = useState([]);
-    const [loadingQuestoes, setLoadingQuestoes] = useState(false);
-    const [selecionadasSimulado, setSelecionadasSimulado] = useState({});
-    const [loadingCriar, setLoadingCriar] = useState(false);
-    const [msgCriacao, setMsgCriacao] = useState(null);
-    const [errCriacao, setErrCriacao] = useState(null);
+    const [resultados, setResultados] = useState({});
 
     useEffect(() => {
         const u = getUsuarioLogado();
-        if (u) setUser(u);
+        if (u) {
+            setUser(u);
+            setResultados(carregarResultados(u.id));
+        }
+    }, []);
+
+    useEffect(() => {
+        async function carregarLista() {
+            try {
+                setLoadingLista(true);
+                setErr(null);
+                const resp = await fetch(`${API_BASE}/simulados`);
+                if (!resp.ok) throw new Error("Erro ao listar simulados");
+                const data = await resp.json();
+                setLista(data);
+            } catch (e) {
+                setErr(e);
+            } finally {
+                setLoadingLista(false);
+            }
+        }
+
+        carregarLista();
     }, []);
 
     const isGestor =
         user && (user.perfil === "ADMIN" || user.perfil === "PROFESSOR");
 
-    async function carregarSimulados() {
-        try {
-            setLoadingSimulados(true);
-            setErrSimulados(null);
-            const resp = await fetch("http://localhost:8080/api/simulados");
-            if (!resp.ok) {
-                const text = await resp.text();
-                console.error("Erro ao listar simulados:", resp.status, text);
-                throw new Error("Erro ao listar simulados");
-            }
-            const data = await resp.json();
-            setSimulados(data);
-        } catch (e) {
-            setErrSimulados(e);
-        } finally {
-            setLoadingSimulados(false);
-        }
+    function handleChange(e) {
+        const { name, value } = e.target;
+        setForm((prev) => ({ ...prev, [name]: value }));
     }
 
-    async function carregarQuestoes() {
-        try {
-            setLoadingQuestoes(true);
-            setErrCriacao(null);
-            const resp = await fetch("http://localhost:8080/api/questoes");
-            if (!resp.ok) {
-                const text = await resp.text();
-                console.error("Erro ao listar questões:", resp.status, text);
-                throw new Error("Erro ao listar questões");
-            }
-            const data = await resp.json();
-            setQuestoes(data);
-            setSelecionadasSimulado({});
-        } catch (e) {
-            setErrCriacao(e);
-        } finally {
-            setLoadingQuestoes(false);
-        }
-    }
-
-    useEffect(() => {
-        carregarSimulados();
-    }, []);
-
-    function toggleSelecionadaSimulado(idQuestao) {
-        setSelecionadasSimulado((prev) => ({
-            ...prev,
-            [idQuestao]: !prev[idQuestao],
-        }));
-    }
-
-    async function criarSimuladoComSelecionadas() {
-        const ids = Object.entries(selecionadasSimulado)
-            .filter(([, marcado]) => marcado)
-            .map(([id]) => Number(id));
-
-        if (!tituloSimulado.trim()) {
-            alert("Informe um título para o simulado.");
+    async function handleCriar(e) {
+        e.preventDefault();
+        if (!isGestor) {
+            alert("Apenas professores e admins podem criar simulados.");
             return;
         }
-
-        if (ids.length === 0) {
-            alert("Selecione pelo menos uma questão.");
+        if (!form.titulo.trim()) {
+            alert("Informe um título.");
             return;
         }
 
         try {
-            setLoadingCriar(true);
-            setErrCriacao(null);
-            setMsgCriacao(null);
+            const resp = await fetch(`${API_BASE}/simulados`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-user-id": user.id,
+                },
+                body: JSON.stringify(form),
+            });
+            if (!resp.ok) throw new Error("Erro ao criar simulado");
+            setForm({ titulo: "", descricao: "" });
 
-            const resp = await fetch(
-                "http://localhost:8080/api/simulados/com-questoes",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        titulo: tituloSimulado,
-                        questaoIds: ids,
-                    }),
-                }
-            );
-
-            if (!resp.ok) {
-                const text = await resp.text();
-                console.error("Erro ao criar simulado:", resp.status, text);
-                throw new Error("Erro ao criar simulado");
-            }
-
-            const simuladoCriado = await resp.json();
-            setMsgCriacao(
-                `Simulado "${simuladoCriado.titulo}" criado com ${ids.length} questões.`
-            );
-            setTituloSimulado("");
-            setSelecionadasSimulado({});
-            await carregarSimulados();
+            // recarrega lista
+            const novaLista = await (await fetch(`${API_BASE}/simulados`)).json();
+            setLista(novaLista);
         } catch (e) {
-            setErrCriacao(e);
-            alert("Erro ao criar simulado.");
-        } finally {
-            setLoadingCriar(false);
+            setErr(e);
         }
     }
 
-    function contarSelecionadas() {
-        return Object.values(selecionadasSimulado).filter(Boolean).length;
+    async function handleDeletar(id) {
+        if (!isGestor) {
+            alert("Apenas professores e admins podem excluir simulados.");
+            return;
+        }
+        if (!window.confirm("Tem certeza que deseja excluir este simulado?")) return;
+
+        try {
+            const resp = await fetch(`${API_BASE}/simulados/${id}`, {
+                method: "DELETE",
+                headers: {
+                    "x-user-id": user.id,
+                },
+            });
+            if (!resp.ok) throw new Error("Erro ao excluir simulado");
+            setLista((prev) => prev.filter((s) => s.id !== id));
+        } catch (e) {
+            setErr(e);
+        }
+    }
+
+    function renderStatusSimulado(s) {
+        const r = resultados[s.id];
+        if (!r) return <span className="muted">Ainda não feito</span>;
+
+        const perc =
+            r.total > 0 ? ((r.acertos / r.total) * 100).toFixed(1) : "0.0";
+        return (
+            <span className="simulado-status-feito">
+        Feito — {r.acertos}/{r.total} ({perc}%)
+      </span>
+        );
+    }
+
+    function renderBotaoAcao(s) {
+        const r = resultados[s.id];
+
+        // Se o aluno já fez, botão desabilitado "Feito"
+        if (r && !isGestor) {
+            const perc =
+                r.total > 0 ? ((r.acertos / r.total) * 100).toFixed(1) : "0.0";
+            return (
+                <button
+                    type="button"
+                    className="btn-ghost"
+                    disabled
+                    title="Simulado já realizado"
+                >
+                    Feito — {r.acertos}/{r.total} ({perc}%)
+                </button>
+            );
+        }
+
+        // Para gestor ou simulados ainda não feitos, mantém o botão de fazer
+        return (
+            <a className="btn-primary" href={`/simulados/${s.id}`}>
+                {isGestor ? "Visualizar" : "Fazer simulado"}
+            </a>
+        );
     }
 
     return (
         <Layout title="Simulados">
             <div className="page-shell">
-                <div className="page-header-row">
-                    <div>
+                <section className="page-hero page-hero--simulados">
+                    <div className="page-hero-main">
                         <h2 className="page-title">Simulados</h2>
                         <p className="page-subtitle">
-                            Crie simulados a partir do Banco de Questões e acompanhe as
-                            tentativas.
+                            Veja todos os simulados disponíveis e acompanhe os que você já fez.
                         </p>
                     </div>
-                </div>
+                </section>
 
-                {/* Área de criação – apenas para gestor */}
-                {isGestor && (
-                    <div className="card card-elevated" style={{ marginBottom: 16 }}>
-                        <div className="card-header-row">
-                            <h3 className="card-title">Criar novo simulado</h3>
-                            <button
-                                type="button"
-                                className="btn-ghost"
-                                onClick={() => {
-                                    const novoMostrar = !mostrarCriacao;
-                                    setMostrarCriacao(novoMostrar);
-                                    setMsgCriacao(null);
-                                    setErrCriacao(null);
-                                    if (novoMostrar && questoes.length === 0) {
-                                        carregarQuestoes();
-                                    }
-                                }}
-                            >
-                                {mostrarCriacao ? "Fechar" : "Selecionar questões"}
-                            </button>
-                        </div>
+                <div className={isGestor ? "grid grid-2" : ""}>
+                    {/* Lista de simulados */}
+                    <div className="card card-elevated">
+                        <h3 className="card-title">Simulados cadastrados</h3>
 
-                        {mostrarCriacao && (
-                            <div style={{ marginTop: 12 }}>
-                                <p className="card-subtitle">
-                                    Defina o título do simulado e marque as questões que farão
-                                    parte dele.
-                                </p>
+                        {err && (
+                            <p style={{ color: "crimson", marginTop: 4 }}>
+                                {err.message || "Erro ao carregar / salvar dados."}
+                            </p>
+                        )}
 
-                                <div className="card-row" style={{ marginTop: 8 }}>
-                                    <input
-                                        className="input"
-                                        type="text"
-                                        placeholder="Título do simulado (ex.: Simulado ENEM 01)"
-                                        value={tituloSimulado}
-                                        onChange={(e) => setTituloSimulado(e.target.value)}
-                                    />
-                                    <button
-                                        type="button"
-                                        className="btn-primary"
-                                        onClick={criarSimuladoComSelecionadas}
-                                        disabled={loadingCriar || loadingQuestoes}
-                                    >
-                                        {loadingCriar ? "Criando..." : "Criar simulado"}
-                                    </button>
-                                </div>
-
-                                <p className="muted" style={{ marginTop: 4 }}>
-                                    Questões selecionadas:{" "}
-                                    <strong>{contarSelecionadas()}</strong>
-                                </p>
-
-                                {loadingQuestoes && <p>Carregando questões...</p>}
-                                {errCriacao && (
-                                    <p style={{ color: "red" }}>
-                                        Erro ao carregar/criar simulado.
-                                    </p>
-                                )}
-                                {msgCriacao && (
-                                    <p style={{ color: "green", marginTop: 4 }}>{msgCriacao}</p>
-                                )}
-
-                                {!loadingQuestoes && questoes.length > 0 && (
-                                    <ul
-                                        className="lista-gestor"
-                                        style={{
-                                            maxHeight: 300,
-                                            overflowY: "auto",
-                                            marginTop: 8,
-                                        }}
-                                    >
-                                        {questoes.map((q) => {
-                                            const marcada = !!selecionadasSimulado[q.id];
-                                            return (
-                                                <li key={q.id}>
-                                                    <label
-                                                        style={{
-                                                            display: "flex",
-                                                            gap: 8,
-                                                            alignItems: "flex-start",
-                                                        }}
-                                                    >
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={marcada}
-                                                            onChange={() => toggleSelecionadaSimulado(q.id)}
-                                                        />
-                                                        <div>
-                                                            <div>
-                                                                <strong>#{q.id}</strong>{" "}
-                                                                <span className="tag-light">
-                                  [{q.materia} / {q.nivel}]
-                                </span>{" "}
-                                                                — {q.enunciado}
-                                                            </div>
-                                                            {q.statusUso && (
-                                                                <div
-                                                                    className="muted"
-                                                                    style={{ fontSize: 12, marginTop: 2 }}
-                                                                >
-                                                                    {q.statusUso}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </label>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                )}
-
-                                {!loadingQuestoes && questoes.length === 0 && (
-                                    <p className="muted" style={{ marginTop: 8 }}>
-                                        Nenhuma questão encontrada no banco.
-                                    </p>
-                                )}
+                        {loadingLista ? (
+                            <p>Carregando simulados...</p>
+                        ) : lista.length === 0 ? (
+                            <p className="muted">Nenhum simulado cadastrado.</p>
+                        ) : (
+                            <div className="simulados-list">
+                                {lista.map((s) => (
+                                    <div key={s.id} className="simulado-card">
+                                        <div className="simulado-card-main">
+                                            <h3>{s.titulo || `Simulado #${s.id}`}</h3>
+                                            <p>{s.descricao || "Simulado para treino."}</p>
+                                            <p className="simulado-meta">ID: {s.id}</p>
+                                            <div className="simulado-status-row">
+                                                {renderStatusSimulado(s)}
+                                            </div>
+                                        </div>
+                                        <div className="simulado-card-actions">
+                                            {renderBotaoAcao(s)}
+                                            {isGestor && (
+                                                <button
+                                                    type="button"
+                                                    className="simulado-delete"
+                                                    onClick={() => handleDeletar(s.id)}
+                                                >
+                                                    Excluir
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         )}
                     </div>
-                )}
 
-                {/* Lista de simulados */}
-                <div className="card card-elevated">
-                    <h3 className="card-title">Simulados disponíveis</h3>
-
-                    {errSimulados && (
-                        <p style={{ color: "red", marginBottom: 8 }}>
-                            Erro ao carregar simulados.
-                        </p>
-                    )}
-
-                    {loadingSimulados ? (
-                        <p>Carregando simulados...</p>
-                    ) : simulados.length === 0 ? (
-                        <p className="muted">Nenhum simulado cadastrado.</p>
-                    ) : (
-                        <ul className="lista-simulados">
-                            {simulados.map((s) => (
-                                <li key={s.id} className="simulado-item">
-                                    <div>
-                                        <strong>{s.titulo}</strong>
-                                        <div className="muted">
-                                            {s.questoes ? s.questoes.length : 0} questões.
-                                        </div>
-                                    </div>
-                                    <div className="simulado-actions">
-                                        {/* Link simples para a rota de fazer o simulado */}
-                                        <a
-                                            className="btn-primary"
-                                            href={`/simulados/${s.id}`}
-                                        >
-                                            Fazer simulado
-                                        </a>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
+                    {/* Criar novo simulado – SOMENTE para gestor */}
+                    {isGestor && (
+                        <div className="card card-elevated">
+                            <h3 className="card-title">Criar novo simulado</h3>
+                            <form className="simulados-form" onSubmit={handleCriar}>
+                                <div className="form-group">
+                                    <label htmlFor="titulo">Título</label>
+                                    <input
+                                        id="titulo"
+                                        name="titulo"
+                                        type="text"
+                                        className="input"
+                                        placeholder="Ex.: Simulado ENEM"
+                                        value={form.titulo}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label htmlFor="descricao">Descrição</label>
+                                    <textarea
+                                        id="descricao"
+                                        name="descricao"
+                                        className="input"
+                                        rows={3}
+                                        placeholder="Breve descrição do simulado."
+                                        value={form.descricao}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                                <button type="submit" className="btn-primary">
+                                    Salvar
+                                </button>
+                            </form>
+                        </div>
                     )}
                 </div>
             </div>
