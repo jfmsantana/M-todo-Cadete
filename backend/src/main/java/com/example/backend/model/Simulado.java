@@ -20,6 +20,9 @@ public class Simulado {
     @Column(nullable = false)
     private String titulo;
 
+    @Column
+    private String descricao;
+
     @ManyToMany
     @JoinTable(name = "simulado_questoes",
             joinColumns = @JoinColumn(name = "simulado_id"),

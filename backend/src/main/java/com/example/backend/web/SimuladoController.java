@@ -29,16 +29,14 @@ public class SimuladoController {
         return simuladoService.buscarPorId(id);
     }
 
-    // CRIAR SIMPLES (tela de Simulados atual)
+    // CRIAR SIMULADO (ADMIN/PROFESSOR)
     @PostMapping
-    public Simulado criar(@RequestBody Simulado s) {
-        return simuladoService.criar(s);
-    }
-
-    // NOVO: criar simulado escolhendo questões do Banco de Questões
-    @PostMapping("/com-questoes")
-    public Simulado criarComQuestoes(@RequestBody SimuladoDTOs.Criar dto) {
-        return simuladoService.criarComQuestoes(dto);
+    public Simulado criar(@RequestBody SimuladoDTOs.Criar dto) {
+        return simuladoService.criar(
+                dto.getTitulo(),
+                dto.getDescricao(),
+                dto.getQuestaoIds()
+        );
     }
 
     // DELETAR SIMULADO (ADMIN/PROFESSOR)

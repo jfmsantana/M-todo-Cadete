@@ -80,9 +80,21 @@ export default function Questoes() {
 
   async function criar(e) {
     e.preventDefault();
+
+    if (!user) {
+      alert("Faça login novamente para criar questões.");
+      return;
+    }
+
+    if (!isGestor) {
+      alert("Apenas professores e admins podem criar questões.");
+      return;
+    }
+
     try {
       setErr(null);
-      await QuestoesAPI.criar({ ...form });
+      await QuestoesAPI.criar({ ...form }, user.id); // <<< AGORA VAI O user.id
+
       setForm((f) => ({
         ...f,
         enunciado: "",
@@ -91,11 +103,13 @@ export default function Questoes() {
         alternativaC: "",
         alternativaD: "",
       }));
+
       await carregar();
     } catch (e) {
       setErr(e);
     }
   }
+
 
   function selecionarAlternativa(idQuestao, letra) {
     if (corrigidas[idQuestao]) return;

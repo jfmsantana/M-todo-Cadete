@@ -6,7 +6,6 @@ export const QuestoesAPI = {
     async listar(materia, nivel) {
         const params = new URLSearchParams();
 
-        // só manda se tiver valor
         if (materia) {
             params.append("materia", materia);
         }
@@ -30,12 +29,19 @@ export const QuestoesAPI = {
         return resp.json();
     },
 
-    async criar(payload) {
+    // AGORA RECEBE userId PARA ENVIAR NO HEADER
+    async criar(payload, userId) {
+        const headers = {
+            "Content-Type": "application/json",
+        };
+
+        if (userId) {
+            headers["x-user-id"] = userId;
+        }
+
         const resp = await fetch(BASE_URL, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers,
             body: JSON.stringify(payload),
         });
 

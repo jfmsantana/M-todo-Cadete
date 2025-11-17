@@ -9,6 +9,7 @@ import com.example.backend.web.dto.SimuladoDTOs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,36 +28,22 @@ public class SimuladoService {
                 .orElseThrow(() -> new IllegalArgumentException("Simulado não encontrado: " + id));
     }
 
-    // criação "simples" (sem escolher questões) – usada pela tela de Simulados atual
-    public Simulado criar(Simulado s) {
-        if (s.getTitulo() == null || s.getTitulo().isBlank()) {
+    public Simulado criar(String titulo, String descricao, List<Long> questaoIds) {
+        if (titulo == null || titulo.isBlank()) {
             throw new IllegalArgumentException("Título do simulado é obrigatório");
         }
+
+        List<Questao> questoes = new ArrayList<>();
+        if (questaoIds != null && !questaoIds.isEmpty()) {
+            questoes = questaoRepo.findAllById(questaoIds);
+        }
+
+        Simulado s = new Simulado();
+        s.setTitulo(titulo);
+        s.setDescricao(descricao);
+        s.setQuestoes(questoes);
+
         return simuladoRepo.save(s);
-    }
-
-    // NOVO: criação a partir de lista de IDs de questões (Banco de Questões)
-    public Simulado criarComQuestoes(SimuladoDTOs.Criar dto) {
-        if (dto.getTitulo() == null || dto.getTitulo().isBlank()) {
-            throw new IllegalArgumentException("Título do simulado é obrigatório");
-        }
-        if (dto.getQuestaoIds() == null || dto.getQuestaoIds().isEmpty()) {
-            throw new IllegalArgumentException("Selecione pelo menos uma questão.");
-        }
-
-        List<Questao> questoes = questaoRepo.findAllById(dto.getQuestaoIds());
-        if (questoes.isEmpty()) {
-            throw new IllegalArgumentException("Nenhuma questão encontrada para os IDs informados.");
-        }
-
-        Simulado simulado = Simulado.builder()
-                .titulo(dto.getTitulo())
-                .questoes(questoes)
-                .build();
-
-        // Ao salvar, o relacionamento ManyToMany Simulado<->Questao é criado
-        // e passamos a saber em quais simulados cada questão foi usada.
-        return simuladoRepo.save(simulado);
     }
 
     public void deletar(Long id) {
